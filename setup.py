@@ -5,7 +5,15 @@
 
 import os
 from setuptools import setup
-import healthgraph
+
+__author__ = "Ali Onur Uyar"
+__copyright__ = "Copyright 2012, Ali Onur Uyar"
+__credits__ = []
+__license__ = "GPL"
+__version__ = "0.2"
+__email__ = "aouyar at gmail.com"
+__status__ = "Development"
+
 
 def read_file(filename):
     """Read a file into a string"""
@@ -18,18 +26,17 @@ def read_file(filename):
 
 
 setup(
-    name='healthgraph',
+    name='healthgraph-api',
     description=u'Python Client for HealthGraph API from RunKeeper.com.',
-    long_description=read_file('README.markdown'),
     keywords=['Health', 'Graph', 'API', 'RunKeeper'],
-    version=healthgraph.__version__,
-    author=healthgraph.__author__,
-    author_email=healthgraph.__email__,
-    mantainer=healthgraph.__author__,
-    mantainer_email=healthgraph.__email__,
+    version=__version__,
+    author=__author__,
+    author_email=__email__,
+    maintainer=__author__,
+    maintainer_email=__email__,
     include_package_data=True,
     url='http://aouyar.github.com/healthgraph-api',
-    license=healthgraph.__license__,
+    license=__license__,
     classifiers=[
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Software Development :: Libraries :: Python Modules',
@@ -40,5 +47,6 @@ setup(
         'Operating System :: OS Independent',
     ],
     packages=['healthgraph',],
+    long_description=read_file('README.md'),
     install_requires=["requests",],
 )

@@ -1,6 +1,11 @@
 """Python Client Library for Health Graph API (http://developer.runkeeper.com/healthgraph). 
-The API is used for accessing RunKeeper.com (http://runkeeper.com) for retrieving, 
+The API is used for accessing RunKeeper (http://runkeeper.com) for retrieving, 
 updating, deleting and uploading Fitness Activity and Health Measurements Information.
+
+The Health Graph API uses OAuth 2.0 for security. Every application must be registered 
+with the Applications Portal of  Health Graph (http://runkeeper.com/partner). 
+Once registered, the application will be assigned a unique client identifier and 
+client secret for use with the Health Graph API.
 
 """
 
@@ -11,7 +16,6 @@ __copyright__ = "Copyright 2012, Ali Onur Uyar"
 __credits__ = []
 __license__ = "GPL"
 __version__ = "0.1"
-__maintainer__ = "Ali Onur Uyar"
 __email__ = "aouyar at gmail.com"
 __status__ = "Development"
 
@@ -31,13 +35,37 @@ rk_login_caption_colors = ('white', 'black',)
 
 
 class RunKeeperAuthMgr:
+    """RunKeeper Authorization Manager
+    
+    Used for generating and revoking the Access Token for accessing RunKeeper
+    using the Health Graph API. Once the Access Token is generated it can be
+    stored and used for querying the HealthGraph API.
+    
+    """
     
     def __init__(self, client_id, client_secret, redirect_uri):
+        """Initialize Authorization Manager.
+        
+        @param client_id:     Client ID for accessing Health Graph API
+        @param client_secret: Client Secret for accessing Health Graph API
+        @param redirect_uri:  Redirect URI for returning control to client web
+                              application after the Authorization Dialog with
+                              RunKeeper.com is executed successfully.
+        
+        """
         self._client_id = client_id
         self._client_secret = client_secret
         self._redirect_uri = redirect_uri
    
     def getLoginURL(self, state=None):
+        """Generates and returns URL for redirecting to Login Page of RunKeeper,
+        which is the Authorization Endpoint of Health Graph API.
+        
+        @param state: State string. Passed to client web application at the end
+                      of the Login Process.
+        @return:      URL for redirecting to RunKeeper Login Page.  
+        
+        """
         payload = {'response_type': 'code',
                    'client_id': self._client_id,
                    'redirect_uri': self._redirect_uri,}
@@ -46,8 +74,18 @@ class RunKeeperAuthMgr:
         req = requests.Request(api_authorization_url, params=payload)
         return req.full_url
     
-    def getLoginButtonURL(self, button_color=None, caption_color=None, 
-                            button_size=None):
+    def getLoginButtonURL(self, button_color=None, caption_color=None, button_size=None):
+        """Return URL for image used for RunKeeper Login button.
+        
+        @param button_color:  Button color. Either 'blue', 'grey' or 'black'.
+                              Default: 'blue'.
+        @param caption_color: Button text color. Either 'white' or 'black'.
+                              Default: 'white'
+        @param button_size:   Button width in pixels. Either 200, 300 or 600.
+                              Default: 200
+        @return:              URL for Login Button Image.
+        
+        """
         if not button_color in rk_login_button_colors:
             button_color = rk_login_button_colors[0]
         if not caption_color in rk_login_caption_colors:
@@ -59,6 +97,15 @@ class RunKeeperAuthMgr:
         return rk_login_button_url % (button_color, caption_color, button_size)
         
     def getAccessToken(self, code):
+        """Returns Access Token retrieved from the Health Graph API Token 
+        Endpoint following the login to RunKeeper.
+        to RunKeeper. 
+        
+        @param code: Code returned by Health Graph API at the Authorization or
+                     RunKeeper Login phase.
+        @return:     Access Token for querying the Health Graph API.
+        
+        """
         payload = {'grant_type': 'authorization_code',
                    'code': code,
                    'client_id': self._client_id,
@@ -67,7 +114,13 @@ class RunKeeperAuthMgr:
         req = requests.post(api_access_token_url, data=payload)
         return req.json['access_token']
     
-    def rmAccessToken(self, access_token):
+    def revokeAccessToken(self, access_token):
+        """Revokes the Access Token by accessing the De-authorization Endpoint
+        of Health Graph API.
+        
+        @param access_token: Access Token for querying Health Graph API.
+        
+        """
         payload = {'access_token': access_token,}
         req = requests.post(api_deauthorization_url, data=payload) #@UnusedVariable
     
