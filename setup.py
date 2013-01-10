@@ -4,7 +4,7 @@
 """
 
 import os
-from setuptools import setup, find_packages
+from setuptools import setup
 import healthgraph
 
 def read_file(filename):
@@ -39,6 +39,6 @@ setup(
         'Development Status :: 3 - Alpha',
         'Operating System :: OS Independent',
     ],
-    packages=find_packages(),
+    packages=['healthgraph',],
     install_requires=["requests",],
 )
