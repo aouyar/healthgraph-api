@@ -39,11 +39,11 @@
 						%for sport, stats in records.items():
 						<tr>
 							<td>{{ sport }}</td>
-							<td>{{ stats.get('THIS_WEEK') }}</td>
-							<td>{{ stats.get('LAST_WEEK') }}</td>
-							<td>{{ stats.get('THIS_MONTH') }}</td>
-							<td>{{ stats.get('LAST_MONTH') }}</td>
-							<td>{{ int(stats.get('OVERALL') / 1000) }}</td>
+							<td align="right">{{ stats.get('THIS_WEEK') }}</td>
+							<td align="right">{{ stats.get('LAST_WEEK') }}</td>
+							<td align="right">{{ stats.get('THIS_MONTH') }}</td>
+							<td align="right">{{ stats.get('LAST_MONTH') }}</td>
+							<td align="right">{{ int(stats.get('OVERALL') / 1000) }}</td>
 						</tr>
 						%end		
 					</tbody>
