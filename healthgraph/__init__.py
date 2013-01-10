@@ -9,6 +9,8 @@ client secret for use with the Health Graph API.
 
 """
 
+import urllib
+import json
 import requests
 
 __author__ = "Ali Onur Uyar"
@@ -71,8 +73,8 @@ class RunKeeperAuthMgr:
                    'redirect_uri': self._redirect_uri,}
         if state is not None:
             payload['state'] = state
-        req = requests.Request(api_authorization_url, params=payload)
-        return req.full_url
+        return "%s?%s" % (api_authorization_url,
+                          urllib.urlencode(payload))
     
     def getLoginButtonURL(self, button_color=None, caption_color=None, button_size=None):
         """Return URL for image used for RunKeeper Login button.
@@ -112,7 +114,8 @@ class RunKeeperAuthMgr:
                    'client_secret': self._client_secret,
                    'redirect_uri': self._redirect_uri,}
         req = requests.post(api_access_token_url, data=payload)
-        return req.json['access_token']
+        data = json.loads(req.text)
+        return data.get('access_token')
     
     def revokeAccessToken(self, access_token):
         """Revokes the Access Token by accessing the De-authorization Endpoint
@@ -159,7 +162,8 @@ class RunKeeperClient:
         url = api_url + path
         req = requests.request(request_type, url, headers=headers, params=params)
         # TODO - Check request errors.
-        return req.json
+        data = json.loads(req.text)
+        return data
     
     def getRoot(self):
         resource = 'user'
