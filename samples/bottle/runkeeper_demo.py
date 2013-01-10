@@ -24,26 +24,68 @@ __status__ = "Development"
 
 
 # Defaults
-conf = {'baseurl': '127.0.0.1:8000',
+conf = {'baseurl': 'http://127.0.0.1:8000',
         'bindaddr': '127.0.0.1',
         'bindport': 8000,
         }
 defaultConfFilename = 'runkeeper_demo.conf'
 
 
-# Globals
+# Session Options
+sessionOpts = {
+    'session.type': 'file',
+    'session.cookie_expires': 1800,
+    'session.data_dir': '/tmp/cache/data',
+    'session.lock_dir': '/tmp/cache/data',
+    'session.auto': False,
+}
 
 
 
 @bottle.route('/')
 def index():
-    rk_auth_mgr = RunKeeperAuthMgr(conf['client_id'], conf['client_secret'], 
-                                   '/'.join((conf['baseurl'], 'login',)))
-    rk_auth_uri = rk_auth_mgr.getLoginURL()
-    rk_button_img = rk_auth_mgr.getLoginButtonURL('blue', 'black', 300)
-    return bottle.template('index.html', {'rk_button_img': rk_button_img,
-                                          'rk_auth_uri': rk_auth_uri,})
+    sess = bottle.request.environ['beaker.session']
+    if sess.has_key('rk_access_token'):
+        bottle.redirect('/welcome')
+    else:
+        rk_auth_mgr = RunKeeperAuthMgr(conf['client_id'], conf['client_secret'], 
+                                       '/'.join((conf['baseurl'], 'login',)))
+        rk_auth_uri = rk_auth_mgr.getLoginURL()
+        rk_button_img = rk_auth_mgr.getLoginButtonURL('blue', 'black', 300)
+        return bottle.template('index.html', {'rk_button_img': rk_button_img,
+                                              'rk_auth_uri': rk_auth_uri,})
+        
+@bottle.route('/login')
+def login():
+    sess = bottle.request.environ['beaker.session']
+    code = bottle.request.query.get('code')
+    if code is not None:
+        rk_auth_mgr = RunKeeperAuthMgr(conf['client_id'], conf['client_secret'], 
+                                       '/'.join((conf['baseurl'], 'login',)))
+        access_token = rk_auth_mgr.getAccessToken(code)
+        sess['rk_access_token'] = access_token
+        sess.save()
+        bottle.redirect('/welcome')
+        
+@bottle.route('/welcome')
+def welcome():
+    sess = bottle.request.environ['beaker.session']
+    access_token = sess.get('rk_access_token')
+    if access_token is not None:
+        rk = RunKeeperClient(access_token)
+        profile = rk.getProfile()
+        records = rk.getRecords()
+        return bottle.template('welcome.html', 
+                               profile=profile, 
+                               records=records)
+    else:
+        bottle.redirect('/')
 
+@bottle.route('/logout')
+def logout():
+    sess = bottle.request.environ['beaker.session']
+    sess.delete()
+    bottle.redirect('/')
 
 
 def parse_cmdline(argv):
@@ -66,8 +108,8 @@ def parse_cmdline(argv):
         return parser.parse_args()
     else:
         return parser.parse_args(argv[1:])
-   
-    
+
+     
 def parse_conf_files(conf_paths):
     conf_file = ConfigParser.RawConfigParser()
     conf_read = conf_file.read(conf_paths)
@@ -107,8 +149,8 @@ def main(argv=None):
     if cmdOpts.devel:
         from bottle import debug
         debug(True)
-    bottle.run(server=bottle.WSGIRefServer, 
-               host=conf['bindaddr'], port=conf['bindport'], 
+    app = SessionMiddleware(bottle.app(), sessionOpts)
+    bottle.run(app=app, host=conf['bindaddr'], port=conf['bindport'], 
                reloader=cmdOpts.devel)
     
 

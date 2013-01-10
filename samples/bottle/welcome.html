@@ -1,0 +1,58 @@
+<html>
+	<head>
+		<title>Health Graph API Demo</title>
+	</head>
+	<body>
+		<div align="center" style="width:100%;">
+		<div align="center" style="width:720px;display:inline-block;">
+			<h1>HealthGraph-API Demo</h1>
+			<p align="left">
+				<a href="https://github.com/aouyar/healthgraph-api">HealthGraph-API</a> 
+				is a Python Client Library for 
+				<a href="http://developer.runkeeper.com/healthgraph">Health Graph API</a>. 
+				The API can be used for accessing 
+				<a href="http://runkeeper.com">RunKeeper.com</a> for 
+				retrieving, updating, deleting and uploading 
+				Fitness Activity and Health Measurements Information.
+			</p>
+			<p align="center">
+				<img src="{{ profile.get('normal_picture') }}" alt="Profile Picture"><br>
+			</p>
+			<p>
+				<b>{{ profile.get('name') }}</b><br>
+				{{ profile.get('athlete_type') }}
+				from
+				{{ profile.get('location', 'Somewhere') }}
+			</p>
+			<p align="center">
+				<b>Total Distance</b>	
+				<table border=1>
+					<thead>
+						<th>Sport</th>
+						<th>This Week<br>(km)</th>
+						<th>Last Week<br>(km)</th>
+						<th>This Month<br>(km)</th>
+						<th>Last Month<br>(km)</th>
+						<th>Overall<br>(km)</th>
+					</thead>
+					<tbody>
+						%for sport, stats in records.items():
+						<tr>
+							<td>{{ sport }}</td>
+							<td>{{ stats.get('THIS_WEEK') }}</td>
+							<td>{{ stats.get('LAST_WEEK') }}</td>
+							<td>{{ stats.get('THIS_MONTH') }}</td>
+							<td>{{ stats.get('LAST_MONTH') }}</td>
+							<td>{{ int(stats.get('OVERALL') / 1000) }}</td>
+						</tr>
+						%end		
+					</tbody>
+				</table>
+			</p>
+			<p>
+				<a href="/logout">Logout</a>
+			</p>
+		</div>
+		</div>
+	</body>
+</html>
