@@ -9,6 +9,8 @@ import os
 import optparse
 import ConfigParser
 import bottle
+from healthgraph import RunKeeperAuthMgr, RunKeeperClient
+from beaker.middleware import SessionMiddleware
 
 
 __author__ = "Ali Onur Uyar"
@@ -35,7 +37,12 @@ defaultConfFilename = 'runkeeper_demo.conf'
 
 @bottle.route('/')
 def index():
-    return bottle.template('index.html')
+    rk_auth_mgr = RunKeeperAuthMgr(conf['client_id'], conf['client_secret'], 
+                                   '/'.join((conf['baseurl'], 'login',)))
+    rk_auth_uri = rk_auth_mgr.getLoginURL()
+    rk_button_img = rk_auth_mgr.getLoginButtonURL('blue', 'black', 300)
+    return bottle.template('index.html', {'rk_button_img': rk_button_img,
+                                          'rk_auth_uri': rk_auth_uri,})
 
 
 
