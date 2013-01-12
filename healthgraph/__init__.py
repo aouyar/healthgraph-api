@@ -184,13 +184,12 @@ class RunKeeperClient:
         resource = 'fitness_activities'
         content_type = 'FitnessActivityFeed'
         return self._apiRequest('GET', resource, content_type)
-    
-    def getActivitySummary(self, activity_id):
-        content_type = 'FitnessActivitySummary'
-        return self._apiRequest('GET', activity_id, content_type)
-    
-    def getActivity(self, resource):
-        content_type = 'FitnessActivity'
+
+    def getActivity(self, resource, summary=False):
+        if summary:
+            content_type = 'FitnessActivitySummary'
+        else:
+            content_type = 'FitnessActivity'
         return self._apiRequest('GET', resource, content_type)
     
     def getWeightMeasurements(self):
