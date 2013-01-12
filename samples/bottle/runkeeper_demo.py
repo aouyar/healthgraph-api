@@ -2,6 +2,14 @@
 """Demo Application for HealthGraph-API Python Library developed using Bottle 
 fast, simple and lightweight WSGI micro web-framework for Python.
 
+The configuration file runkeeper_demo.conf must be edited to set the client_id 
+and client_secret. The client_id and client_secret is generated upon registration
+in the Applications Portal of Health Graph (http://runkeeper.com/partner).
+
+Running the demo: python runkeeper_demo.py
+
+Point the web browser to the following URL: http://127.0.0.1:8000
+
 """
 
 import sys
@@ -40,6 +48,10 @@ sessionOpts = {
     'session.auto': False,
 }
 
+
+class ConfigurationError(Exception):
+    """Base classs for Configuration Errors"""
+    pass
 
 
 @bottle.route('/')
@@ -88,8 +100,13 @@ def logout():
     bottle.redirect('/')
 
 
-def parse_cmdline(argv):
-    """Parse command line options."""
+def parse_cmdline(argv=None):
+    """Parse command line options.
+    
+    @param argv: List of command line arguments. If None, get list from system.
+    @return:     Tuple of Option List and Argument List.
+    
+    """
     parser = optparse.OptionParser()
     parser.add_option('-c', '--conf', help='Configuration file path.',
                       dest='confpath',default=None)
@@ -108,13 +125,21 @@ def parse_cmdline(argv):
         return parser.parse_args()
     else:
         return parser.parse_args(argv[1:])
-
+    
      
 def parse_conf_files(conf_paths):
+    """Parse the configuration file and return dictionary of configuration 
+    options.
+    
+    @param conf_paths: List of configuration file paths to parse.
+    @return:           Dictionary of configuration options.
+    
+    """
     conf_file = ConfigParser.RawConfigParser()
     conf_read = conf_file.read(conf_paths)
-    if conf_read:
-        try:
+    conf = {}
+    try:
+        if conf_read:
             conf['client_id'] = conf_file.get('runkeeper', 'client_id')
             conf['client_secret'] = conf_file.get('runkeeper', 'client_secret')
             if conf_file.has_option('runkeeper', 'bindport'):
@@ -123,37 +148,43 @@ def parse_conf_files(conf_paths):
                 conf['bindaddr'] = conf_file.get('runkeeper', 'bindaddr')
             if conf_file.has_option('runkeeper', 'baseurl'):
                 conf['baseurl'] = conf_file.get('runkeeper', 'baseurl')
-        except ConfigParser.Error:
-            return "Error parsing configuration file(s): %s\n%s" % (
-                ', '.join(conf_read), sys.exc_info()[1])
+            return conf
+    except ConfigParser.Error:
+        raise ConfigurationError("Error parsing configuration file(s): %s\n" 
+                                 % sys.exc_info()[1])
     else:
-        return "No valid configuration file (%s) found." % defaultConfFilename
+        raise ConfigurationError("No valid configuration file (%s) found." 
+                                 % defaultConfFilename)
 
 
 def main(argv=None):
-    cmdOpts = parse_cmdline(argv)[0]
-    if cmdOpts.confpath is not None:
-        if os.path.exists(cmdOpts.confpath):
-            conf_paths = [cmdOpts.confpath,]
+    """Main Block - Configure and run the Bottle Web Server."""
+    cmd_opts = parse_cmdline(argv)[0]
+    if cmd_opts.confpath is not None:
+        if os.path.exists(cmd_opts.confpath):
+            conf_paths = [cmd_opts.confpath,]
         else:
-            return "Configuration file not found: %s" % cmdOpts.confpath
+            return "Configuration file not found: %s" % cmd_opts.confpath
     else:
-        conf_paths = [os.path.join(path, defaultConfFilename) for path in ('/etc', '.',)]
-    parse_conf_files(conf_paths)
-    if cmdOpts.bindport is not None:
-        conf['bindport'] = cmdOpts.bindport
-    if cmdOpts.bindaddr is not None:
-        conf['bindaddr'] = cmdOpts.bindaddr
-    if cmdOpts.baseurl is not None:
-        conf['baseurl'] = cmdOpts.baseurl
-    if cmdOpts.devel:
+        conf_paths = [os.path.join(path, defaultConfFilename) 
+                      for path in ('/etc', '.',)]
+    try:
+        conf.update(parse_conf_files(conf_paths))
+    except ConfigurationError:
+        return(sys.exc_info()[1])
+    if cmd_opts.bindport is not None:
+        conf['bindport'] = cmd_opts.bindport
+    if cmd_opts.bindaddr is not None:
+        conf['bindaddr'] = cmd_opts.bindaddr
+    if cmd_opts.baseurl is not None:
+        conf['baseurl'] = cmd_opts.baseurl
+    if cmd_opts.devel:
         from bottle import debug
         debug(True)
     app = SessionMiddleware(bottle.app(), sessionOpts)
     bottle.run(app=app, host=conf['bindaddr'], port=conf['bindport'], 
-               reloader=cmdOpts.devel)
+               reloader=cmd_opts.devel)
     
-
 
 if __name__ == "__main__":
     sys.exit(main())
