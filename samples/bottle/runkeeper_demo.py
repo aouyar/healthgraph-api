@@ -98,6 +98,22 @@ def logout():
     sess = bottle.request.environ['beaker.session']
     sess.delete()
     bottle.redirect('/')
+    
+@bottle.route('/view_access_token')
+def view_access_token():
+    sess = bottle.request.environ['beaker.session']
+    access_token = sess.get('rk_access_token')
+    if access_token is not None:
+        remote_addr = bottle.request.get('REMOTE_ADDR')
+        return bottle.template('access_token.html',
+                               remote_addr=remote_addr,
+                               access_token=(access_token 
+                                             if remote_addr == '127.0.0.1'
+                                             else None))
+    else:
+        bottle.redirect('/')
+    
+
 
 
 def parse_cmdline(argv=None):

@@ -1,0 +1,44 @@
+<html>
+	<head>
+		<title>Health Graph API Demo</title>
+	</head>
+	<body>
+		<div align="center" style="width:100%;">
+		<div align="center" style="width:720px;display:inline-block;">
+			<h1>HealthGraph-API Demo</h1>
+			<p align="left">
+				<a href="https://github.com/aouyar/healthgraph-api">HealthGraph-API</a> 
+				is a Python Client Library for 
+				<a href="http://developer.runkeeper.com/healthgraph">Health Graph API</a>. 
+				The API can be used for accessing 
+				<a href="http://runkeeper.com">RunKeeper.com</a> for 
+				retrieving, updating, deleting and uploading 
+				Fitness Activity and Health Measurements Information.
+			</p>
+			<p>
+				Client IP: <b>{{ remote_addr }}</b> 
+			</p>
+			<p>
+			% if access_token is None:
+				<p><b>Access token cannot be displayed.</b></p>
+				<p>
+					Viewing of the access token is not permitted unless 
+					you are connecting from localhost (127.0.0.1).	
+				</p>
+			% else:
+				<p>
+					Access Token: <b>{{ access_token }}</b>
+				</p>
+				<p align="left">
+					<font color="red"><b>WARNING</b></font>: 
+					Sending the Access Token to the client to be displayed 
+					in a web browser is a security risk. This page is 
+					provided just for testing. Normally, the Access Token 
+					must never be sent to the client.
+				</p>
+			% end
+			</p>
+		</div>
+		</div>
+	</body>
+</html>
