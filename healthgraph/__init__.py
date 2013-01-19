@@ -17,7 +17,7 @@ __author__ = "Ali Onur Uyar"
 __copyright__ = "Copyright 2012, Ali Onur Uyar"
 __credits__ = []
 __license__ = "GPL"
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 __email__ = "aouyar at gmail.com"
 __status__ = "Development"
 
@@ -180,10 +180,11 @@ class RunKeeperClient:
         content_type = 'Settings'
         return self._apiRequest('GET', resource, content_type)
         
-    def getActivityList(self):
+    def getActivityList(self, page_size=10):
         resource = 'fitness_activities'
         content_type = 'FitnessActivityFeed'
-        return self._apiRequest('GET', resource, content_type)
+        return self._apiRequest('GET', resource, content_type, 
+                                params={'pageSize': page_size,})
 
     def getActivity(self, resource, summary=False):
         if summary:
@@ -192,10 +193,11 @@ class RunKeeperClient:
             content_type = 'FitnessActivity'
         return self._apiRequest('GET', resource, content_type)
     
-    def getWeightMeasurements(self):
+    def getWeightMeasurements(self, page_size=10):
         resource = 'weight'
         content_type = 'WeightSetFeed'
-        return self._apiRequest('GET', resource, content_type)
+        return self._apiRequest('GET', resource, content_type,
+                                params={'pageSize': page_size,})
     
     def getWeightMeasurement(self, resource):
         content_type = 'WeightSet'
