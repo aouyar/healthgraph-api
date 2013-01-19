@@ -15,7 +15,7 @@ Once registered, the application will be assigned a unique client identifier and
 client secret for use with the Health Graph API.
 
 More detailed and updated information for the project is published in the 
-[Health Graph API Project Web Page](http://aouyar.github.com/healthgraph-api/)
+[Health Graph API Project Web Page](http://aouyar.github.com/healthgraph-api/).
 
 For information on other projects you can check 
 my [GitHub Personal Page](http://aouyar.github.com)
@@ -46,7 +46,7 @@ Installation
 
 The easiest way to install the code is to use [pip](http://www.pip-installer.org/).
 
-Install the newest version from [PyPI](http://pypi.python.org):
+Install the newest version from [PyPI](http://pypi.python.org/pypi/healthgraph-api):
 
 	pip install healthgraph-api
 	
@@ -60,7 +60,6 @@ included _setup.py_ script for installation:
 
 	./setup.py install
 	
-
 
 Licensing
 ---------
