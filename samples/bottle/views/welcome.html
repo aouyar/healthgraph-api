@@ -25,7 +25,26 @@
 				{{ profile.get('location', 'Somewhere') }}
 			</p>
 			<p align="center">
-				<b>Total Distance</b>	
+				<h2>Recent Activities</h2>	
+				<table border=1>
+					<thead>
+						<th>Date / Time</th>
+						<th>Sport</th>
+						<th>Distance (km)</th>
+					</thead>
+					<tbody>
+						%for stats in activities.get('items', []):
+						<tr>
+							<td>{{ stats.get('start_time') }}</td>
+							<td>{{ stats.get('type') }}</td>
+							<td align="right">{{ '%.1f' % (stats.get('total_distance', 0) / 1000) }}</td>
+						</tr>
+						%end		
+					</tbody>
+				</table>
+			</p>
+			<p align="center">
+				<h2>Total Distance</h2>	
 				<table border=1>
 					<thead>
 						<th>Sport</th>
@@ -39,11 +58,11 @@
 						%for sport, stats in records.items():
 						<tr>
 							<td>{{ sport }}</td>
-							<td align="right">{{ stats.get('THIS_WEEK') }}</td>
-							<td align="right">{{ stats.get('LAST_WEEK') }}</td>
-							<td align="right">{{ stats.get('THIS_MONTH') }}</td>
-							<td align="right">{{ stats.get('LAST_MONTH') }}</td>
-							<td align="right">{{ int(stats.get('OVERALL') / 1000) }}</td>
+							<td align="right">{{ '%.1f' % stats.get('THIS_WEEK', 0) }}</td>
+							<td align="right">{{ '%.1f' % stats.get('LAST_WEEK',  0) }}</td>
+							<td align="right">{{ '%.1f' % stats.get('THIS_MONTH', 0) }}</td>
+							<td align="right">{{ '%.1f' % stats.get('LAST_MONTH', 0) }}</td>
+							<td align="right">{{ '%.1f' % (stats.get('OVERALL', 0) / 1000) }}</td>
 						</tr>
 						%end		
 					</tbody>

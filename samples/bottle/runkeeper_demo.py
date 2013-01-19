@@ -25,7 +25,7 @@ __author__ = "Ali Onur Uyar"
 __copyright__ = "Copyright 2012, Ali Onur Uyar"
 __credits__ = []
 __license__ = "GPL"
-__version__ = "0.1"
+__version__ = "0.2.2"
 __maintainer__ = "Ali Onur Uyar"
 __email__ = "aouyar at gmail.com"
 __status__ = "Development"
@@ -87,8 +87,10 @@ def welcome():
         rk = RunKeeperClient(access_token)
         profile = rk.getProfile()
         records = rk.getRecords()
+        activities = rk.getActivityList(5)
         return bottle.template('welcome.html', 
-                               profile=profile, 
+                               profile=profile,
+                               activities=activities, 
                                records=records)
     else:
         bottle.redirect('/')
