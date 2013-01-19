@@ -44,13 +44,13 @@ the [Git](http://git-scm.com) repository for the project by running:
 Installation
 ------------
 
-The easiest way to install the code is to use [pip](http://www.pip-installer.org/):
+The easiest way to install the code is to use [pip](http://www.pip-installer.org/).
 
-* Install the newest version from [PyPI](http://pypi.python.org):
+Install the newest version from [PyPI](http://pypi.python.org):
 
 	pip install healthgraph-api
 	
-* Install the latest development version:
+Install the latest development version:
 
 	pip install git+https://github.com/aouyar/healthgraph-api.git#egg=healthgraph-api
 	
