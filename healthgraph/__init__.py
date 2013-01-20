@@ -59,7 +59,7 @@ class RunKeeperAuthMgr:
         self._client_secret = client_secret
         self._redirect_uri = redirect_uri
    
-    def getLoginURL(self, state=None):
+    def get_login_url(self, state=None):
         """Generates and returns URL for redirecting to Login Page of RunKeeper,
         which is the Authorization Endpoint of Health Graph API.
         
@@ -76,7 +76,7 @@ class RunKeeperAuthMgr:
         return "%s?%s" % (api_authorization_url,
                           urllib.urlencode(payload))
     
-    def getLoginButtonURL(self, button_color=None, caption_color=None, button_size=None):
+    def get_login_button_url(self, button_color=None, caption_color=None, button_size=None):
         """Return URL for image used for RunKeeper Login button.
         
         @param button_color:  Button color. Either 'blue', 'grey' or 'black'.
@@ -98,7 +98,7 @@ class RunKeeperAuthMgr:
             button_size = rk_login_button_sizes['None']
         return rk_login_button_url % (button_color, caption_color, button_size)
         
-    def getAccessToken(self, code):
+    def get_access_token(self, code):
         """Returns Access Token retrieved from the Health Graph API Token 
         Endpoint following the login to RunKeeper.
         to RunKeeper. 
@@ -117,7 +117,7 @@ class RunKeeperAuthMgr:
         data = json.loads(req.text)
         return data.get('access_token')
     
-    def revokeAccessToken(self, access_token):
+    def revoke_access_token(self, access_token):
         """Revokes the Access Token by accessing the De-authorization Endpoint
         of Health Graph API.
         
@@ -134,7 +134,7 @@ class RunKeeperClient:
         self._access_token = access_token
         self._root = None
         
-    def _apiRequest(self, request_type, resource='user', 
+    def _api_request(self, request_type, resource='user', 
                     content_type=None, params=None):
         headers = {'Authorization': "Bearer %s" % self._access_token,}
         content_header = None
@@ -155,7 +155,7 @@ class RunKeeperClient:
                 path = api_user_resource
             else:
                 if self._root is None:
-                    self._root = self.getRoot()
+                    self._root = self.get_root()
                 path = self._root.get(resource)
                 if path is None:
                     pass # TODO - Raise Error for invalid resource type.
@@ -165,48 +165,48 @@ class RunKeeperClient:
         data = json.loads(req.text)
         return data
     
-    def getRoot(self):
+    def get_root(self):
         resource = 'user'
         content_type = 'User'
-        return self._apiRequest('GET', resource, content_type)
+        return self._api_request('GET', resource, content_type)
         
-    def getProfile(self):
+    def get_profile(self):
         resource = 'profile'
         content_type = 'Profile'
-        return self._apiRequest('GET', resource, content_type)
+        return self._api_request('GET', resource, content_type)
     
-    def getSettings(self):
+    def get_settings(self):
         resource = 'settings'
         content_type = 'Settings'
-        return self._apiRequest('GET', resource, content_type)
+        return self._api_request('GET', resource, content_type)
         
-    def getActivityList(self, page_size=10):
+    def get_activity_list(self, page_size=10):
         resource = 'fitness_activities'
         content_type = 'FitnessActivityFeed'
-        return self._apiRequest('GET', resource, content_type, 
+        return self._api_request('GET', resource, content_type, 
                                 params={'pageSize': page_size,})
 
-    def getActivity(self, resource, summary=False):
+    def get_activity(self, resource, summary=False):
         if summary:
             content_type = 'FitnessActivitySummary'
         else:
             content_type = 'FitnessActivity'
-        return self._apiRequest('GET', resource, content_type)
+        return self._api_request('GET', resource, content_type)
     
-    def getWeightMeasurements(self, page_size=10):
+    def get_weight_measurements(self, page_size=10):
         resource = 'weight'
         content_type = 'WeightSetFeed'
-        return self._apiRequest('GET', resource, content_type,
+        return self._api_request('GET', resource, content_type,
                                 params={'pageSize': page_size,})
     
-    def getWeightMeasurement(self, resource):
+    def get_weight_measurement(self, resource):
         content_type = 'WeightSet'
-        return self._apiRequest('GET', resource, content_type)
+        return self._api_request('GET', resource, content_type)
     
-    def getRecords(self):
+    def get_records(self):
         resource = 'records'
         content_type = 'Records'
-        resp = self._apiRequest('GET', resource, content_type)
+        resp = self._api_request('GET', resource, content_type)
         result = {}
         for actrecs in resp:
             act_type = actrecs.get('activity_type')

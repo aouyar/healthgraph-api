@@ -62,8 +62,8 @@ def index():
     else:
         rk_auth_mgr = RunKeeperAuthMgr(conf['client_id'], conf['client_secret'], 
                                        '/'.join((conf['baseurl'], 'login',)))
-        rk_auth_uri = rk_auth_mgr.getLoginURL()
-        rk_button_img = rk_auth_mgr.getLoginButtonURL('blue', 'black', 300)
+        rk_auth_uri = rk_auth_mgr.get_login_url()
+        rk_button_img = rk_auth_mgr.get_login_button_url('blue', 'black', 300)
         return bottle.template('index.html', {'rk_button_img': rk_button_img,
                                               'rk_auth_uri': rk_auth_uri,})
         
@@ -74,7 +74,7 @@ def login():
     if code is not None:
         rk_auth_mgr = RunKeeperAuthMgr(conf['client_id'], conf['client_secret'], 
                                        '/'.join((conf['baseurl'], 'login',)))
-        access_token = rk_auth_mgr.getAccessToken(code)
+        access_token = rk_auth_mgr.get_access_token(code)
         sess['rk_access_token'] = access_token
         sess.save()
         bottle.redirect('/welcome')
@@ -85,9 +85,9 @@ def welcome():
     access_token = sess.get('rk_access_token')
     if access_token is not None:
         rk = RunKeeperClient(access_token)
-        profile = rk.getProfile()
-        records = rk.getRecords()
-        activities = rk.getActivityList(5)
+        profile = rk.get_profile()
+        records = rk.get_records()
+        activities = rk.get_activity_list(5)
         return bottle.template('welcome.html', 
                                profile=profile,
                                activities=activities, 
