@@ -2,10 +2,8 @@
 The API is used for accessing RunKeeper (http://runkeeper.com) for retrieving, 
 updating, deleting and uploading Fitness Activity and Health Measurements Information.
 
-The Health Graph API uses OAuth 2.0 for security. Every application must be registered 
-with the Applications Portal of  Health Graph (http://runkeeper.com/partner). 
-Once registered, the application will be assigned a unique client identifier and 
-client secret for use with the Health Graph API.
+This module implements the functions for authentication, authorization, revocation
+of credentials for accesing the Health Graph API.
 
 """
 
@@ -25,8 +23,6 @@ __status__ = "Development"
 api_authorization_url = 'https://runkeeper.com/apps/authorize'
 api_deauthorization_url = 'https://runkeeper.com/apps/de-authorize'
 api_access_token_url = 'https://runkeeper.com/apps/token'
-api_url = 'https://api.runkeeper.com'
-api_user_resource = '/user'
 rk_login_button_url = "http://static1.runkeeper.com/images/assets/login-%s-%s-%s.png"
 rk_login_button_colors = ( 'blue', 'grey', 'black',)
 rk_login_button_sizes = {200: '200x38',
@@ -126,97 +122,4 @@ class RunKeeperAuthMgr:
         """
         payload = {'access_token': access_token,}
         req = requests.post(api_deauthorization_url, data=payload) #@UnusedVariable
-    
-    
-class RunKeeperClient:
-    
-    def __init__(self, access_token):
-        self._access_token = access_token
-        self._root = None
         
-    def _api_request(self, request_type, resource='user', 
-                    content_type=None, params=None):
-        headers = {'Authorization': "Bearer %s" % self._access_token,}
-        content_header = None
-        if content_type is not None:
-            if request_type == 'GET':
-                content_header = 'Accept'
-            elif request_type in ('POST', 'PUT'):
-                content_header = 'Content-Type'
-            else:
-                content_header = None
-            if content_header is not None:
-                headers[content_header] = ('application/vnd.com.runkeeper.%s+json'
-                                           % content_type)
-        if resource.startswith('/'):
-            path = resource
-        else:
-            if resource == 'user':
-                path = api_user_resource
-            else:
-                if self._root is None:
-                    self._root = self.get_root()
-                path = self._root.get(resource)
-                if path is None:
-                    pass # TODO - Raise Error for invalid resource type.
-        url = api_url + path
-        req = requests.request(request_type, url, headers=headers, params=params)
-        # TODO - Check request errors.
-        data = json.loads(req.text)
-        return data
-    
-    def get_root(self):
-        resource = 'user'
-        content_type = 'User'
-        return self._api_request('GET', resource, content_type)
-        
-    def get_profile(self):
-        resource = 'profile'
-        content_type = 'Profile'
-        return self._api_request('GET', resource, content_type)
-    
-    def get_settings(self):
-        resource = 'settings'
-        content_type = 'Settings'
-        return self._api_request('GET', resource, content_type)
-        
-    def get_activity_list(self, page_size=10):
-        resource = 'fitness_activities'
-        content_type = 'FitnessActivityFeed'
-        return self._api_request('GET', resource, content_type, 
-                                params={'pageSize': page_size,})
-
-    def get_activity(self, resource, summary=False):
-        if summary:
-            content_type = 'FitnessActivitySummary'
-        else:
-            content_type = 'FitnessActivity'
-        return self._api_request('GET', resource, content_type)
-    
-    def get_weight_measurements(self, page_size=10):
-        resource = 'weight'
-        content_type = 'WeightSetFeed'
-        return self._api_request('GET', resource, content_type,
-                                params={'pageSize': page_size,})
-    
-    def get_weight_measurement(self, resource):
-        content_type = 'WeightSet'
-        return self._api_request('GET', resource, content_type)
-    
-    def get_records(self):
-        resource = 'records'
-        content_type = 'Records'
-        resp = self._api_request('GET', resource, content_type)
-        result = {}
-        for actrecs in resp:
-            act_type = actrecs.get('activity_type')
-            if act_type:
-                act_stats = {}
-                stats = actrecs.get('stats')
-                if stats:
-                    for stat in stats:
-                        act_stats[stat['stat_type']] = stat['value']
-                if act_stats.get('OVERALL', 0) > 0:
-                    result[act_type] = act_stats
-        return result
-    
