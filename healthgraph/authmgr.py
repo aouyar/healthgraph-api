@@ -1,4 +1,5 @@
 """Python Client Library for Health Graph API (http://developer.runkeeper.com/healthgraph). 
+
 The API is used for accessing RunKeeper (http://runkeeper.com) for retrieving, 
 updating, deleting and uploading Fitness Activity and Health Measurements Information.
 
@@ -8,7 +9,6 @@ of credentials for accesing the Health Graph API.
 """
 
 import urllib
-import json
 import requests
 
 __author__ = "Ali Onur Uyar"
@@ -20,19 +20,16 @@ __email__ = "aouyar at gmail.com"
 __status__ = "Development"
 
 
-api_authorization_url = 'https://runkeeper.com/apps/authorize'
-api_deauthorization_url = 'https://runkeeper.com/apps/de-authorize'
-api_access_token_url = 'https://runkeeper.com/apps/token'
-rk_login_button_url = "http://static1.runkeeper.com/images/assets/login-%s-%s-%s.png"
-rk_login_button_colors = ( 'blue', 'grey', 'black',)
-rk_login_button_sizes = {200: '200x38',
-                         300: '300x57',
-                         600: '600x114',
-                         None: '200x38',}
-rk_login_caption_colors = ('white', 'black',)
+from settings import (RK_API_AUTHORIZATION_URL,
+                      RK_API_DEAUTHORIZATION_URL,
+                      RK_API_ACCESS_TOKEN_URL, 
+                      RK_LOGIN_BUTTON_URL,
+                      RK_LOGIN_BUTTON_COLORS,
+                      RK_LOGIN_BUTTON_SIZES,
+                      RK_LOGIN_BUTTON_CAPTION_COLORS)
 
 
-class RunKeeperAuthMgr:
+class RunKeeperAuthMgr(object):
     """RunKeeper Authorization Manager
     
     Used for generating and revoking the Access Token for accessing RunKeeper
@@ -69,7 +66,7 @@ class RunKeeperAuthMgr:
                    'redirect_uri': self._redirect_uri,}
         if state is not None:
             payload['state'] = state
-        return "%s?%s" % (api_authorization_url,
+        return "%s?%s" % (RK_API_AUTHORIZATION_URL,
                           urllib.urlencode(payload))
     
     def get_login_button_url(self, button_color=None, caption_color=None, button_size=None):
@@ -84,15 +81,15 @@ class RunKeeperAuthMgr:
         @return:              URL for Login Button Image.
         
         """
-        if not button_color in rk_login_button_colors:
-            button_color = rk_login_button_colors[0]
-        if not caption_color in rk_login_caption_colors:
-            caption_color = rk_login_caption_colors[0]
-        if rk_login_button_sizes.has_key(button_size):
-            button_size = rk_login_button_sizes[button_size]
+        if not button_color in RK_LOGIN_BUTTON_COLORS:
+            button_color = RK_LOGIN_BUTTON_COLORS[0]
+        if not caption_color in RK_LOGIN_BUTTON_CAPTION_COLORS:
+            caption_color = RK_LOGIN_BUTTON_CAPTION_COLORS[0]
+        if RK_LOGIN_BUTTON_SIZES.has_key(button_size):
+            button_size = RK_LOGIN_BUTTON_SIZES[button_size]
         else:
-            button_size = rk_login_button_sizes['None']
-        return rk_login_button_url % (button_color, caption_color, button_size)
+            button_size = RK_LOGIN_BUTTON_SIZES['None']
+        return RK_LOGIN_BUTTON_URL % (button_color, caption_color, button_size)
         
     def get_access_token(self, code):
         """Returns Access Token retrieved from the Health Graph API Token 
@@ -109,8 +106,8 @@ class RunKeeperAuthMgr:
                    'client_id': self._client_id,
                    'client_secret': self._client_secret,
                    'redirect_uri': self._redirect_uri,}
-        req = requests.post(api_access_token_url, data=payload)
-        data = json.loads(req.text)
+        req = requests.post(RK_API_ACCESS_TOKEN_URL, data=payload)
+        data = req.json()
         return data.get('access_token')
     
     def revoke_access_token(self, access_token):
@@ -121,5 +118,5 @@ class RunKeeperAuthMgr:
         
         """
         payload = {'access_token': access_token,}
-        req = requests.post(api_deauthorization_url, data=payload) #@UnusedVariable
+        req = requests.post(RK_API_DEAUTHORIZATION_URL, data=payload) #@UnusedVariable
         
