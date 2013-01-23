@@ -21,3 +21,8 @@ RK_LOGIN_BUTTON_CAPTION_COLORS = ('white', 'black',)
 
 RK_API_URL = 'https://api.runkeeper.com'
 RK_USER_RESOURCE = '/user'
+
+RK_MONTH2NUM = {'Jan': 1,
+                'Feb': 2,}
+RK_NUM2MONTH = {1: 'Jan',
+                2: 'Feb',}

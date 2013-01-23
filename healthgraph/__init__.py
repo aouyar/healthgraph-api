@@ -12,7 +12,7 @@ client secret for use with the Health Graph API.
 
 from authmgr import RunKeeperAuthMgr
 from session import RunKeeperSession, init_session, get_session
-from resource import User, UserProfile
+from resource import User, Profile, Settings
 
 
 __author__ = "Ali Onur Uyar"

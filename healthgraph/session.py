@@ -8,6 +8,8 @@ This module implements sessions for making REST requests to the Health Graph API
 """
 
 import requests
+from settings import RK_API_URL
+
 
 __author__ = "Ali Onur Uyar"
 __copyright__ = "Copyright 2012, Ali Onur Uyar"
@@ -16,9 +18,6 @@ __license__ = "GPL"
 __version__ = "0.2.2"
 __email__ = "aouyar at gmail.com"
 __status__ = "Development"
-
-
-from settings import RK_API_URL
     
     
 class RunKeeperSession(object):
