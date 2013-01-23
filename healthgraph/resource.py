@@ -62,12 +62,6 @@ class ContentType:
     FRIEND_FEED = 'TeamFeed'
     FRIEND_INVITE = 'Invitation'
     FRIEND_REPLY = 'Reply'
-    
-    
-
-def parse_datetime(val):
-    return val
-    
 
 
 class Prop:
