@@ -82,7 +82,7 @@ class BaseResource(object):
     def init(self):
         if self._resource is not None:
             resp = self._session.get(self._resource, self._content_type)
-            self._data = resp.json()
+            self._data = resp.json() # TODO - Error Checking
         
     @property
     def resource(self):
@@ -93,6 +93,30 @@ class BaseResource(object):
         return self._content_type
 
 
+class DictResource(BaseResource):
+    
+    def __init__(self, resource = None, session=None):
+        super(DictResource, self).__init__(resource, session)
+        
+    def __len__(self):
+        return len(self._data)
+            
+    def __getitem__(self, k):
+        return self._data[k]
+        
+    def __contains__(self, k):
+        return self._data.has_key(k)
+    
+    def __iter__(self):
+        return self.iterkeys()
+    
+    def keys(self):
+        return self._data.keys()
+    
+    def iterkeys(self):
+        return self._data.iterkeys()
+        
+
 class BasicResource(BaseResource):
     
     _prop_dict = {}
@@ -101,11 +125,6 @@ class BasicResource(BaseResource):
     
     def __init__(self, resource = None, session=None):
         super(BasicResource, self).__init__(resource, session)
-        
-    def init(self):
-        if self._resource is not None:
-            resp = self._session.get(self._resource, self._content_type)
-            self._data = resp.json() # TODO - Error Checking
             
     def __len__(self):
         return len(self._prop_dict)
@@ -138,7 +157,7 @@ class BasicResource(BaseResource):
             if isinstance(prop, PropLink):
                 resource = self._data.get(k)
                 cls = globals().get(prop.resource_class)
-                if issubclass(cls, BasicResource):
+                if issubclass(cls, BaseResource):
                     return cls(resource, self._session)
                 else:
                     pass
@@ -208,7 +227,7 @@ class ResourceIter(BaseResource):
             return self._data.get('size', 0)
         else:
             pass
-         
+        
 
 class User(BasicResource):
     
@@ -216,7 +235,8 @@ class User(BasicResource):
     _prop_dict = {'userID': PropString(),
                   }
     _link_dict = {'profile': PropLink('Profile'),
-                  'settings': PropLink('Settings')
+                  'settings': PropLink('Settings'),
+                  'records': PropLink('PersonalRecords')
                   }
     
     _feed_dict = {'fitness_activities': PropFeed('FitnessActivityIter'),}
@@ -229,6 +249,9 @@ class User(BasicResource):
     
     def get_settings(self):
         return self._get_link('settings')
+    
+    def get_records(self):
+        return self._get_link('records')
     
     def iter_fitness_activities(self):
         return self._get_iter('fitness_activities')
@@ -266,8 +289,40 @@ class Settings(BasicResource):
     
     def __init__(self, resource, session=None):
         super(Settings, self).__init__(resource, session)
+
+ 
+class PersonalRecords(DictResource):
+    
+    _content_type = ContentType.PERSONAL_RECORDS
+    
+    def __init__(self, resource, session=None):
+        super(PersonalRecords, self).__init__(resource, session)
         
-        
+    def init(self):
+        if self._resource is not None:
+            self._data = {}
+            resp = self._session.get(self._resource, self._content_type)
+            data = resp.json() # TODO - Error Checking
+            for actrecs in data:
+                act_type = actrecs.get('activity_type')
+                if act_type:
+                    act_stats = {}
+                    stats = actrecs.get('stats')
+                    if stats:
+                        for stat in stats:
+                            stat_type = stat['stat_type']
+                            stat_val = stat['value']
+                            stat_date = stat.get('date')
+                            act_stats[stat_type] = {'value': stat_val,}
+                            if stat_date is not None:
+                                act_stats[stat_type]['date'] = stat_date
+                        overall = act_stats.get('OVERALL')
+                        if overall is not None and overall.get('value', 0) > 0:
+                            self._data[act_type] = act_stats
+                else:
+                    pass
+            
+    
 class FitnessActivityListItem(ResourceListItem):
     
     _prop_dict = {'duration': PropInteger(),
@@ -286,6 +341,7 @@ class FitnessActivityIter(ResourceIter):
     
     def __init__(self, resource, session=None):
         super(FitnessActivityIter, self).__init__(resource, session)
+        
         
 
         
