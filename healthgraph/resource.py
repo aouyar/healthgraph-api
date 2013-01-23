@@ -8,10 +8,10 @@ and uploading Fitness Activity and Health Measurements information.
 
 """
 
-import re
-from datetime import date, datetime
-from settings import USER_RESOURCE, MONTH2NUM, NUM2MONTH
+from settings import USER_RESOURCE
 from session import get_session 
+from property import (PropSimple, PropString, PropInteger, PropBoolean, PropDate,
+                      PropDateTime, PropLink, PropFeed)
 
 
 __author__ = "Ali Onur Uyar"
@@ -62,80 +62,6 @@ class ContentType:
     FRIEND_FEED = 'TeamFeed'
     FRIEND_INVITE = 'Invitation'
     FRIEND_REPLY = 'Reply'
-    
-
-class Prop:
-
-    pass
-    
-
-class PropSimple(Prop):
-
-    parse = None
-    
-    def __init__(self, editable=False):
-        self.editable = False
-        
-    def parse(self, val):
-        return val
-    
-
-class PropString(PropSimple):
-    
-    pass
-
-
-class PropInteger(PropSimple):
-    
-    pass
-
-
-class PropBoolean(PropSimple):
-    
-    def parse(self, val):
-        if val == 'true':
-            return True
-        elif val == 'false':
-            return False
-        else:
-            return None
-
-        
-class PropDate(PropSimple):
-    
-    def parse(self, val):
-        mobj = re.match('\w+,\s*(\d+)\s+(\w+)\s+(\d+)', val)
-        if mobj is not None:
-            return date(int(mobj.group(3)), 
-                        MONTH2NUM[mobj.group(2)],
-                        int(mobj.group(1)))
-
-            
-class PropDateTime(PropSimple):
-    
-    def parse(self, val):
-        mobj = re.match('\w+,\s*(\d+)\s+(\w+)\s+(\d+)\s+(\d+):(\d+):(\d+)', val)
-        if mobj is not None:
-            return datetime(int(mobj.group(3)), 
-                            MONTH2NUM[mobj.group(2)],
-                            int(mobj.group(1)),
-                            int(mobj.group(4)),
-                            int(mobj.group(5)),
-                            int(mobj.group(6)),)
-
-
-class PropLink(Prop):
-
-    def __init__(self, resource_class):
-        
-        self.resource_class = resource_class
-        
-
-class PropFeed(Prop):
-    
-    def __init__(self, resource_class):
-        
-        self.resource_class = resource_class
         
 
 class BaseResource(object):
