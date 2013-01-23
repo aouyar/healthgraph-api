@@ -10,7 +10,7 @@ and uploading Fitness Activity and Health Measurements information.
 
 import re
 from datetime import date
-from settings import RK_USER_RESOURCE, RK_MONTH2NUM, RK_NUM2MONTH
+from settings import USER_RESOURCE, MONTH2NUM, NUM2MONTH
 from session import get_session 
 
 
@@ -113,7 +113,7 @@ class PropDate(PropSimple):
         mobj = re.match('\w+,\s*(\d+)\s+(\w+)\s+(\d+)', val)
         if mobj is not None:
             return date(int(mobj.group(3)), 
-                        RK_MONTH2NUM[mobj.group(2)],
+                        MONTH2NUM[mobj.group(2)],
                         int(mobj.group(1)))
         
 
@@ -173,7 +173,7 @@ class User(BaseResource):
                   }
     
     def __init__(self, session=None):
-        super(User, self).__init__(RK_USER_RESOURCE, session)
+        super(User, self).__init__(USER_RESOURCE, session)
         
     
 class Profile(BaseResource):

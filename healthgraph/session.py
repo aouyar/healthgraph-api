@@ -8,7 +8,7 @@ This module implements sessions for making REST requests to the Health Graph API
 """
 
 import requests
-from settings import RK_API_URL
+from settings import API_URL
 
 
 __author__ = "Ali Onur Uyar"
@@ -20,7 +20,7 @@ __email__ = "aouyar at gmail.com"
 __status__ = "Development"
     
     
-class RunKeeperSession(object):
+class Session(object):
     
     def __init__(self, access_token):
         self._access_token = access_token
@@ -40,7 +40,7 @@ class RunKeeperSession(object):
             if content_header is not None:
                 headers[content_header] = ('application/vnd.com.runkeeper.%s+json'
                                            % content_type)
-        url = RK_API_URL + resource
+        url = API_URL + resource
         req = requests.request(request_type, url, headers=headers, 
                                params=params, data=data)
         return req
@@ -65,7 +65,7 @@ _default_session = None
 
 def init_session(access_token):
     global _default_session
-    _default_session = RunKeeperSession(access_token)
+    _default_session = Session(access_token)
     
 def get_session():
     return _default_session

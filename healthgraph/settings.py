@@ -8,21 +8,20 @@ This module stores the global constants used by the Health Graph Client.
 """
 
 
-RK_API_AUTHORIZATION_URL = 'https://runkeeper.com/apps/authorize'
-RK_API_DEAUTHORIZATION_URL = 'https://runkeeper.com/apps/de-authorize'
-RK_API_ACCESS_TOKEN_URL = 'https://runkeeper.com/apps/token'
-RK_LOGIN_BUTTON_URL = "http://static1.runkeeper.com/images/assets/login-%s-%s-%s.png"
-RK_LOGIN_BUTTON_COLORS = ( 'blue', 'grey', 'black',)
-RK_LOGIN_BUTTON_SIZES = {200: '200x38',
-                         300: '300x57',
-                         600: '600x114',
-                         None: '200x38',}
-RK_LOGIN_BUTTON_CAPTION_COLORS = ('white', 'black',)
+API_AUTHORIZATION_URL = 'https://runkeeper.com/apps/authorize'
+API_DEAUTHORIZATION_URL = 'https://runkeeper.com/apps/de-authorize'
+API_ACCESS_TOKEN_URL = 'https://runkeeper.com/apps/token'
+LOGIN_BUTTON_URL = "http://static1.runkeeper.com/images/assets/login-%s-%s-%s.png"
+LOGIN_BUTTON_COLORS = ( 'blue', 'grey', 'black',)
+LOGIN_BUTTON_SIZES = {200: '200x38',
+                      300: '300x57',
+                      600: '600x114',
+                      None: '200x38',}
+LOGIN_BUTTON_CAPTION_COLORS = ('white', 'black',)
 
-RK_API_URL = 'https://api.runkeeper.com'
-RK_USER_RESOURCE = '/user'
+API_URL = 'https://api.runkeeper.com'
+USER_RESOURCE = '/user'
 
-RK_MONTH2NUM = {'Jan': 1,
-                'Feb': 2,}
-RK_NUM2MONTH = {1: 'Jan',
-                2: 'Feb',}
+NUM2MONTH = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct',
+             'Nov','Dec',)
+MONTH2NUM = dict(zip(NUM2MONTH,range(1,13)))
