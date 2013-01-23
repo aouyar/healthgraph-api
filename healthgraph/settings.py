@@ -21,6 +21,7 @@ LOGIN_BUTTON_CAPTION_COLORS = ('white', 'black',)
 
 API_URL = 'https://api.runkeeper.com'
 USER_RESOURCE = '/user'
+DEFAULT_PAGE_SIZE = 20
 
 NUM2MONTH = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct',
              'Nov','Dec',)

@@ -22,7 +22,7 @@ __version__ = "0.2.2"
 __email__ = "aouyar at gmail.com"
 __status__ = "Development"
 
-
+    
 class ContentType:
     """Content Types used by Health Graph API"""
     
@@ -62,7 +62,7 @@ class ContentType:
     FRIEND_FEED = 'TeamFeed'
     FRIEND_INVITE = 'Invitation'
     FRIEND_REPLY = 'Reply'
-
+    
 
 class Prop:
 
@@ -110,20 +110,23 @@ class PropDate(PropSimple):
                         MONTH2NUM[mobj.group(2)],
                         int(mobj.group(1)))
         
-
 class PropLink(Prop):
 
     def __init__(self, resource_class):
         
         self.resource_class = resource_class
+        
 
+class PropFeed(Prop):
     
+    def __init__(self, resource_class):
+        
+        self.resource_class
+        
 
 class BaseResource(object):
     
     _content_type = None
-    _prop_dict = {}
-    _class_dict = {}
     
     def __init__(self, resource = None, session=None):
         if session is not None:
@@ -136,41 +139,112 @@ class BaseResource(object):
         self._data = None
         self.init()
         
+    def init(self):
+        if self._resource is not None:
+            resp = self._session.get(self._resource, self._content_type)
+            self._data = resp.json()
+        
     @property
     def resource(self):
         return self._resource
     
+    @property
+    def content_type(self):
+        return self._content_type
+
+
+class BasicResource(BaseResource):
+    
+    _prop_dict = {}
+    _link_dict = {}
+    _feed_dict = {}
+    
+    def __init__(self, resource = None, session=None):
+        super(BasicResource, self).__init__(resource, session)
+        
     def init(self):
         if self._resource is not None:
             resp = self._session.get(self._resource, self._content_type)
             self._data = resp.json()
             
-    def _get(self, k):
+    def __len__(self):
+        return len(self._prop_dict)
+            
+    def __getitem__(self, k):
         prop = self._prop_dict.get(k)
-        if isinstance(prop, PropSimple):
-            return prop.parse(self._data.get(k))
-        elif isinstance(prop, PropLink):
-            resource = self._data.get(k)
-            cls = globals().get(prop.resource_class)
-            if issubclass(cls, BaseResource):
-                return cls(resource, self._session)
+        if prop is not None:
+            if isinstance(prop, PropSimple):
+                return prop.parse(self._data.get(k))
             else:
-                return cls, BaseResource
+                return None
+        else:
+            raise KeyError(k)
+        
+    def __contains__(self, k):
+        return self._prop_dict.has_key(k)
+    
+    def __iter__(self):
+        return self._prop_dict.iterkeys()
+            
+    def _get_link(self, k):
+        prop = self._link_dict.get(k)
+        if prop is not None:
+            if isinstance(prop, PropLink):
+                resource = self._data.get(k)
+                cls = globals().get(prop.resource_class)
+                if issubclass(cls, BasicResource):
+                    return cls(resource, self._session)
+                else:
+                    pass
+            else:
+                pass
+        else:
+            raise KeyError(k)
+        
+    def _get_iter(self, k):
+        pass
+        
+class ResourceIter(BaseResource):
+    
+    def __init__(self, resource, session=None):
+        super(ResourceIter, self).__init__(resource, session)
+        
 
+class FitnessActivityIter(ResourceIter):
+    
+    _contentType = ContentType.FITNESS_ACTIVITY_FEED
+    
+    def __init__(self, resource, session=None):
+        super(FitnessActivityIter, self).__init__(resource, session)
+        
+    
+        
 
-class User(BaseResource):
+class User(BasicResource):
     
     _content_type = ContentType.USER
     _prop_dict = {'userID': PropString(),
-                  'profile': PropLink('Profile'),
+                  }
+    _link_dict = {'profile': PropLink('Profile'),
                   'settings': PropLink('Settings')
                   }
+    
+    _feed_dict = {'fitness_activities', PropFeed('FitnessActivityIter'),}
     
     def __init__(self, session=None):
         super(User, self).__init__(USER_RESOURCE, session)
         
+    def get_profile(self):
+        return self._get_link('profile')
     
-class Profile(BaseResource):
+    def get_settings(self):
+        return self._get_link('settings')
+    
+    def iter_fitness_activities(self):
+        pass
+    
+
+class Profile(BasicResource):
     
     _content_type = ContentType.PROFILE
     _prop_dict = {'name': PropString(),
@@ -190,7 +264,7 @@ class Profile(BaseResource):
         super(Profile, self).__init__(resource, session)
 
 
-class Settings(BaseResource):
+class Settings(BasicResource):
     
     _content_type = ContentType.SETTINGS
     _prop_dict = {'facebook_connected': PropBoolean(),
