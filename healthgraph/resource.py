@@ -9,7 +9,7 @@ and uploading Fitness Activity and Health Measurements information.
 """
 
 import re
-from datetime import date
+from datetime import date, datetime
 from settings import USER_RESOURCE, MONTH2NUM, NUM2MONTH
 from session import get_session 
 
@@ -99,7 +99,7 @@ class PropBoolean(PropSimple):
             return False
         else:
             return None
-        
+
         
 class PropDate(PropSimple):
     
@@ -109,7 +109,21 @@ class PropDate(PropSimple):
             return date(int(mobj.group(3)), 
                         MONTH2NUM[mobj.group(2)],
                         int(mobj.group(1)))
-        
+
+            
+class PropDateTime(PropSimple):
+    
+    def parse(self, val):
+        mobj = re.match('\w+,\s*(\d+)\s+(\w+)\s+(\d+)\s+(\d+):(\d+):(\d+)', val)
+        if mobj is not None:
+            return datetime(int(mobj.group(3)), 
+                            MONTH2NUM[mobj.group(2)],
+                            int(mobj.group(1)),
+                            int(mobj.group(4)),
+                            int(mobj.group(5)),
+                            int(mobj.group(6)),)
+
+
 class PropLink(Prop):
 
     def __init__(self, resource_class):
@@ -121,7 +135,7 @@ class PropFeed(Prop):
     
     def __init__(self, resource_class):
         
-        self.resource_class
+        self.resource_class = resource_class
         
 
 class BaseResource(object):
@@ -184,6 +198,12 @@ class BasicResource(BaseResource):
         return self._prop_dict.has_key(k)
     
     def __iter__(self):
+        return self.iterkeys()
+    
+    def keys(self):
+        return self._prop_dict.keys()
+    
+    def iterkeys(self):
         return self._prop_dict.iterkeys()
             
     def _get_link(self, k):
@@ -202,23 +222,54 @@ class BasicResource(BaseResource):
             raise KeyError(k)
         
     def _get_iter(self, k):
-        pass
+        prop = self._feed_dict.get(k)
+        if prop is not None:
+            if isinstance(prop, PropFeed):
+                resource = self._data.get(k)
+                cls = globals().get(prop.resource_class)
+                if issubclass(cls, ResourceIter):
+                    return cls(resource, self._session)
+                else:
+                    pass
+            else:
+                pass
+        else:
+            raise KeyError(k)
+
+
+class ResourceListItem(BasicResource):
+    
+    def __init__(self, resource, data, session = None):
+        super(BasicResource, self).__init__(resource, session)
+        self._data = data
         
+    def init(self):
+        pass
+
+       
 class ResourceIter(BaseResource):
+    
+    _list_item_class = None
     
     def __init__(self, resource, session=None):
         super(ResourceIter, self).__init__(resource, session)
         
-
-class FitnessActivityIter(ResourceIter):
+    def __iter__(self):
+        if self._list_item_class is None:
+            pass
+        if self._data is not None:
+            for itm in self._data['items']:
+                yield self._list_item_class(self._resource, itm, self._session)
+        else:
+            pass
     
-    _contentType = ContentType.FITNESS_ACTIVITY_FEED
-    
-    def __init__(self, resource, session=None):
-        super(FitnessActivityIter, self).__init__(resource, session)
-        
-    
-        
+    @property
+    def size(self):
+        if self._data is not None:
+            return self._data.get('size', 0)
+        else:
+            pass
+         
 
 class User(BasicResource):
     
@@ -229,7 +280,7 @@ class User(BasicResource):
                   'settings': PropLink('Settings')
                   }
     
-    _feed_dict = {'fitness_activities', PropFeed('FitnessActivityIter'),}
+    _feed_dict = {'fitness_activities': PropFeed('FitnessActivityIter'),}
     
     def __init__(self, session=None):
         super(User, self).__init__(USER_RESOURCE, session)
@@ -241,7 +292,7 @@ class User(BasicResource):
         return self._get_link('settings')
     
     def iter_fitness_activities(self):
-        pass
+        return self._get_iter('fitness_activities')
     
 
 class Profile(BasicResource):
@@ -276,4 +327,26 @@ class Settings(BasicResource):
     
     def __init__(self, resource, session=None):
         super(Settings, self).__init__(resource, session)
+        
+        
+class FitnessActivityListItem(ResourceListItem):
+    
+    _prop_dict = {'duration': PropInteger(),
+                  'start_time': PropDateTime(),
+                  'type': PropString(),}
+    _link_dict = {}
+    
+    def __init__(self, resource, data, session = None):
+        super(FitnessActivityListItem, self).__init__(resource, data, session)
+        
+
+class FitnessActivityIter(ResourceIter):
+    
+    _contentType = ContentType.FITNESS_ACTIVITY_FEED
+    _list_item_class = FitnessActivityListItem
+    
+    def __init__(self, resource, session=None):
+        super(FitnessActivityIter, self).__init__(resource, session)
+        
+
         
