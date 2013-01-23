@@ -179,7 +179,7 @@ class BasicResource(BaseResource):
     def init(self):
         if self._resource is not None:
             resp = self._session.get(self._resource, self._content_type)
-            self._data = resp.json()
+            self._data = resp.json() # TODO - Error Checking
             
     def __len__(self):
         return len(self._prop_dict)
@@ -258,10 +258,23 @@ class ResourceIter(BaseResource):
         if self._list_item_class is None:
             pass
         if self._data is not None:
-            for itm in self._data['items']:
-                yield self._list_item_class(self._resource, itm, self._session)
+            while True:
+                for itm in self._data['items']:
+                    yield self._list_item_class(self._resource, itm, self._session)
+                if not self._next_page():
+                    raise StopIteration
         else:
             pass
+       
+    def _next_page(self):
+        if self._data is not None:
+            next_page = self._data.get('next')
+            if next_page is not None:
+                self._resource = next_page
+                self.init()
+                return True
+        else:
+            return False
     
     @property
     def size(self):
