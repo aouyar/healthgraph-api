@@ -8,6 +8,7 @@ This module implements sessions for making REST requests to the Health Graph API
 """
 
 import requests
+import exceptions
 from settings import API_URL
 
 
@@ -24,7 +25,6 @@ class Session(object):
     
     def __init__(self, access_token):
         self._access_token = access_token
-        self._root = None
         
     def request(self, request_type, resource, content_type=None, 
                 params=None, data=None):
@@ -61,7 +61,17 @@ class Session(object):
         return self.request('HEAD', resource, content_type, params=params)
 
 
-_default_session = None
+class NullSession(Session):
+
+    def __init__(self):
+        self._access_token = None
+        
+    def request(self, request_type, resource, content_type=None, 
+            params=None, data=None):
+        raise exceptions.NoSessionError()
+
+
+_default_session = NullSession()
 
 def init_session(access_token):
     global _default_session
@@ -69,11 +79,4 @@ def init_session(access_token):
     
 def get_session():
     return _default_session
-
-        
-    
-    
-        
-    
-    
     
