@@ -8,10 +8,11 @@ and uploading Fitness Activity and Health Measurements information.
 
 """
 
+import inspect
+from collections import namedtuple
 from settings import USER_RESOURCE
-from session import get_session 
-from property import (PropSimple, PropString, PropInteger, PropBoolean, PropDate,
-                      PropDateTime, PropLink, PropFeed)
+from session import get_session
+from parser import parse_resource_dict, parse_bool, parse_date, parse_datetime
 
 
 __author__ = "Ali Onur Uyar"
@@ -62,7 +63,20 @@ class ContentType:
     FRIEND_FEED = 'TeamFeed'
     FRIEND_INVITE = 'Invitation'
     FRIEND_REPLY = 'Reply'
-        
+
+
+class ResourceLink(namedtuple('ResourceLink', ('clsname', 'resource'))):
+    pass
+
+
+class PropResourceLink(object):
+    
+    def __init__(self, clsname):
+        self._clsname = clsname
+    
+    def __call__(self, resource=None):
+        return ResourceLink(self._clsname, resource)
+
 
 class BaseResource(object):
     
@@ -73,16 +87,7 @@ class BaseResource(object):
             self._session = session
         else:
             self._session = get_session()
-            if self._session is None:
-                raise Exception("Error: No active RunKeeper Session.")
         self._resource = resource
-        self._data = None
-        self.init()
-        
-    def init(self):
-        if self._resource is not None:
-            resp = self._session.get(self._resource, self._content_type)
-            self._data = resp.json() # TODO - Error Checking
         
     @property
     def resource(self):
@@ -91,113 +96,45 @@ class BaseResource(object):
     @property
     def content_type(self):
         return self._content_type
-
-
-class DictResource(BaseResource):
     
-    def __init__(self, resource = None, session=None):
-        super(DictResource, self).__init__(resource, session)
-        
-    def __len__(self):
-        return len(self._data)
-            
-    def __getitem__(self, k):
-        return self._data[k]
-        
-    def __contains__(self, k):
-        return self._data.has_key(k)
+    def _get_resource(self):
+        resp = self._session.get(self._resource, self._content_type)
+        return resp.json() # TODO - Error Checking
     
-    def __iter__(self):
-        return self.iterkeys()
-    
-    def keys(self):
-        return self._data.keys()
-    
-    def iterkeys(self):
-        return self._data.iterkeys()
-        
-
-class BasicResource(BaseResource):
-    
-    _prop_dict = {}
-    _link_dict = {}
-    _feed_dict = {}
-    
-    def __init__(self, resource = None, session=None):
-        super(BasicResource, self).__init__(resource, session)
-            
-    def __len__(self):
-        return len(self._prop_dict)
-            
-    def __getitem__(self, k):
-        prop = self._prop_dict.get(k)
-        if prop is not None:
-            if isinstance(prop, PropSimple):
-                return prop.parse(self._data.get(k))
-            else:
-                return None
-        else:
-            raise KeyError(k)
-        
-    def __contains__(self, k):
-        return self._prop_dict.has_key(k)
-    
-    def __iter__(self):
-        return self.iterkeys()
-    
-    def keys(self):
-        return self._prop_dict.keys()
-    
-    def iterkeys(self):
-        return self._prop_dict.iterkeys()
-            
-    def _get_link(self, k):
-        prop = self._link_dict.get(k)
-        if prop is not None:
-            if isinstance(prop, PropLink):
-                resource = self._data.get(k)
-                cls = globals().get(prop.resource_class)
-                if issubclass(cls, BaseResource):
-                    return cls(resource, self._session)
+    def _get_link(self, link):
+        if link is not None:
+                cls = globals().get(link.clsname)
+                if inspect.isclass(cls) and issubclass(cls, BaseResource):
+                    return cls(link.resource, self._session)
                 else:
                     pass
-            else:
-                pass
         else:
-            raise KeyError(k)
+            return None
         
-    def _get_iter(self, k):
-        prop = self._feed_dict.get(k)
-        if prop is not None:
-            if isinstance(prop, PropFeed):
-                resource = self._data.get(k)
-                cls = globals().get(prop.resource_class)
-                if issubclass(cls, ResourceIter):
-                    return cls(resource, self._session)
-                else:
-                    pass
-            else:
-                pass
-        else:
-            raise KeyError(k)
-
-
-class ResourceListItem(BasicResource):
+class ContainerResource(BaseResource):
     
-    def __init__(self, resource, data, session = None):
-        super(BasicResource, self).__init__(resource, session)
-        self._data = data
+    _prop_defs = {}
+    
+    def __init__(self, resource = None, session=None):
+        super(ContainerResource, self).__init__(resource, session)
+        self._prop_dict = {}
+        self.init()
         
     def init(self):
-        pass
-
+        if self._resource is not None:
+            data = self._get_resource()
+            self._prop_dict = self._parse_data(data)
+            
+    def _parse_data(self, data):
+        return parse_resource_dict(self._prop_defs, data)
+        
        
-class ResourceIter(BaseResource):
+class FeedResource(BaseResource):
     
     _list_item_class = None
     
     def __init__(self, resource, session=None):
-        super(ResourceIter, self).__init__(resource, session)
+        super(FeedResource, self).__init__(resource, session)
         
     def __iter__(self):
         if self._list_item_class is None:
@@ -208,9 +145,7 @@ class ResourceIter(BaseResource):
                     yield self._list_item_class(self._resource, itm, self._session)
                 if not self._next_page():
                     raise StopIteration
-        else:
-            pass
-       
+                
     def _next_page(self):
         if self._data is not None:
             next_page = self._data.get('next')
@@ -220,128 +155,142 @@ class ResourceIter(BaseResource):
                 return True
         else:
             return False
-    
-    @property
-    def size(self):
-        if self._data is not None:
-            return self._data.get('size', 0)
-        else:
-            pass
-        
 
-class User(BasicResource):
+class User(ContainerResource):
     
     _content_type = ContentType.USER
-    _prop_dict = {'userID': PropString(),
-                  }
-    _link_dict = {'profile': PropLink('Profile'),
-                  'settings': PropLink('Settings'),
-                  'records': PropLink('PersonalRecords')
+    _prop_defs = {'userID': None,
+                  'profile': PropResourceLink('Profile'),
+                  'settings': PropResourceLink('Settings'),
+                  'fitness_activities': PropResourceLink('FitnessActivityFeed'),
+                  'strength_training_activities': PropResourceLink(''),
+                  'background_activities': PropResourceLink(''),
+                  'sleep': PropResourceLink(''),
+                  'nutrition': PropResourceLink(''),
+                  'weight': PropResourceLink(''),
+                  'general_measurements': PropResourceLink(''),
+                  'diabetes': PropResourceLink(''),
+                  'records': PropResourceLink('PersonalRecords'),
+                  'team': PropResourceLink(''),                
                   }
     
-    _feed_dict = {'fitness_activities': PropFeed('FitnessActivityIter'),}
+    _feed_dict = {'fitness_activities': 'FitnessActivityIter',}
     
     def __init__(self, session=None):
         super(User, self).__init__(USER_RESOURCE, session)
-        
-    def get_profile(self):
-        return self._get_link('profile')
     
+    def get_profile(self):
+        return self._get_link(self._prop_dict['profile'])
+        
     def get_settings(self):
-        return self._get_link('settings')
+        return self._get_link(self._prop_dict['settings'])
     
     def get_records(self):
-        return self._get_link('records')
+        return self._get_link(self._prop_dict['records'])
     
-    def iter_fitness_activities(self):
-        return self._get_iter('fitness_activities')
+    def get_fitness_activity_iter(self):
+        return self._get_link(self._prop_dict['fitness_activities'])
     
 
-class Profile(BasicResource):
+class Profile(ContainerResource):
     
     _content_type = ContentType.PROFILE
-    _prop_dict = {'name': PropString(),
-                  'location': PropString(),
-                  'athlete_type': PropString(editable=True),
-                  'gender': PropString(),
-                  'birthday': PropDate(),
-                  'elite': PropBoolean(),
-                  'profile': PropString(),
-                  'small_picture': PropString(),
-                  'normal_picture': PropString(),
-                  'medium_picture': PropString(),
-                  'large_picture': PropString(),
+    _prop_defs = {'name': None,
+                  'location': None,
+                  'athlete_type': None,
+                  'gender': None,
+                  'birthday': parse_date,
+                  'elite': parse_bool,
+                  'profile': None,
+                  'small_picture': None,
+                  'normal_picture': None,
+                  'medium_picture': None,
+                  'large_picture': None,
                   }
     
     def __init__(self, resource, session=None):
         super(Profile, self).__init__(resource, session)
 
 
-class Settings(BasicResource):
+class Settings(ContainerResource):
     
     _content_type = ContentType.SETTINGS
-    _prop_dict = {'facebook_connected': PropBoolean(),
-                  'twitter_connected': PropBoolean(),
-                  'foursquare_connected': PropBoolean(),
-                  'share_fitness_activities': PropString(editable=True),
-                  'share_map': PropString(editable=True),
+    _prop_defs = {'facebook_connected': parse_bool,
+                  'twitter_connected': parse_bool,
+                  'foursquare_connected': parse_bool,
+                  'share_fitness_activities': None,
+                  'share_map': None,
+                  'post_fitness_activity_facebook': parse_bool,
+                  'post_fitness_activity_twitter': parse_bool,
+                  'post_live_fitness_activity_facebook': parse_bool,
+                  'post_live_fitness_activity_twitter': parse_bool,
+                  'share_background_activities': None,
+                  'post_background_activity_facebook': parse_bool,
+                  'post_background_activity_twitter': parse_bool,
+                  'share_sleep': None,
+                  'post_sleep_facebook': parse_bool,
+                  'post_sleep_twitter': parse_bool,
+                  'share_nutrition': None,
+                  'post_nutrition_facebook': parse_bool,
+                  'post_nutrition_twitter': parse_bool,
+                  'share_weight': None,
+                  'post_weight_facebook': parse_bool,
+                  'post_weight_twitter': parse_bool,
+                  'share_general_measurements': None,
+                  'post_general_measurements_facebook': parse_bool,
+                  'post_general_measurements_twitter': parse_bool,
+                  'share_diabetes': None,
+                  'post_diabetes_facebook': parse_bool,
+                  'post_diabetes_twitter': parse_bool,
+                  'distance_units': None,
+                  'weight_units': None,
+                  'first_day_of_week': None,
                   }
     
     def __init__(self, resource, session=None):
         super(Settings, self).__init__(resource, session)
 
- 
-class PersonalRecords(DictResource):
+
+class FitnessActivityFeed(FeedResource):
+    
+    _content_type = ContentType.FITNESS_ACTIVITY_FEED
+    _prop_defs = {'size': None,
+                  'items': None,
+                  'previous': None,
+                  'next': None}
+    
+    def __init__(self, resource, session=None):
+        super(Settings, self).__init__(resource, session)
+
+
+class PersonalRecords(ContainerResource):
     
     _content_type = ContentType.PERSONAL_RECORDS
-    
+
     def __init__(self, resource, session=None):
         super(PersonalRecords, self).__init__(resource, session)
-        
-    def init(self):
-        if self._resource is not None:
-            self._data = {}
-            resp = self._session.get(self._resource, self._content_type)
-            data = resp.json() # TODO - Error Checking
-            for actrecs in data:
-                act_type = actrecs.get('activity_type')
-                if act_type:
-                    act_stats = {}
-                    stats = actrecs.get('stats')
-                    if stats:
-                        for stat in stats:
-                            stat_type = stat['stat_type']
-                            stat_val = stat['value']
-                            stat_date = stat.get('date')
+
+    def _parse_data(self, data):
+        prop_dict = {}
+        for actrecs in data:
+            act_type = actrecs.get('activity_type')
+            if act_type:
+                act_stats = {}
+                stats = actrecs.get('stats')
+                if stats:
+                    for stat in stats:
+                        stat_type = stat['stat_type']
+                        stat_val = stat['value']
+                        stat_date = stat.get('date')
+                        if stat_type == 'OVERALL':
+                            act_stats[stat_type] = {'value': stat_val / 1000.0,}
+                        else:
                             act_stats[stat_type] = {'value': stat_val,}
-                            if stat_date is not None:
-                                act_stats[stat_type]['date'] = stat_date
-                        overall = act_stats.get('OVERALL')
-                        if overall is not None and overall.get('value', 0) > 0:
-                            self._data[act_type] = act_stats
-                else:
-                    pass
-            
-    
-class FitnessActivityListItem(ResourceListItem):
-    
-    _prop_dict = {'duration': PropInteger(),
-                  'start_time': PropDateTime(),
-                  'type': PropString(),}
-    _link_dict = {}
-    
-    def __init__(self, resource, data, session = None):
-        super(FitnessActivityListItem, self).__init__(resource, data, session)
-        
-
-class FitnessActivityIter(ResourceIter):
-    
-    _contentType = ContentType.FITNESS_ACTIVITY_FEED
-    _list_item_class = FitnessActivityListItem
-    
-    def __init__(self, resource, session=None):
-        super(FitnessActivityIter, self).__init__(resource, session)
-        
-        
-
-        
+                        if stat_date is not None:
+                            act_stats[stat_type]['date'] = stat_date
+                    overall = act_stats.get('OVERALL')
+                    if overall is not None and overall.get('value', 0) > 0:
+                        prop_dict[act_type] = act_stats
+            else:
+                pass
+        return prop_dict 
