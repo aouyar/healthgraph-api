@@ -47,6 +47,18 @@ def parse_datetime(val):
                         int(mobj.group(5)),
                         int(mobj.group(6)),)
         
+def parse_distance(val):
+    try:
+        return float(val)
+    except:
+        return None
+    
+def parse_distance_km(val):
+    try:
+        return float(val) * 1000
+    except:
+        return None
+    
 def parse_resource_dict(prop_defs, data):
     prop_dict = dict([(k, None) for k in prop_defs])
     for k,v in data.items():

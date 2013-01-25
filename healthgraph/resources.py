@@ -12,7 +12,8 @@ import inspect
 from collections import namedtuple
 from settings import USER_RESOURCE
 from session import get_session
-from parser import parse_resource_dict, parse_bool, parse_date, parse_datetime
+from parser import (parse_resource_dict, parse_bool, parse_distance, parse_distance_km, 
+                    parse_date, parse_datetime,)
 
 
 __author__ = "Ali Onur Uyar"
@@ -103,11 +104,11 @@ class BaseResource(object):
     
     def _get_link(self, link):
         if link is not None:
-                cls = globals().get(link.clsname)
-                if inspect.isclass(cls) and issubclass(cls, BaseResource):
-                    return cls(link.resource, self._session)
-                else:
-                    pass
+            cls = globals().get(link.clsname)
+            if inspect.isclass(cls) and issubclass(cls, BaseResource):
+                return cls(link.resource, self._session)
+            else:
+                pass
         else:
             return None
         
@@ -118,43 +119,67 @@ class ContainerResource(BaseResource):
     def __init__(self, resource = None, session=None):
         super(ContainerResource, self).__init__(resource, session)
         self._prop_dict = {}
-        self.init()
+        self.load()
         
-    def init(self):
+    def load(self):
         if self._resource is not None:
             data = self._get_resource()
             self._prop_dict = self._parse_data(data)
             
     def _parse_data(self, data):
         return parse_resource_dict(self._prop_defs, data)
-        
-       
-class FeedResource(BaseResource):
+
+
+class FeedItemResource(BaseResource):
     
-    _list_item_class = None
+    _prop_defs = {}
+    
+    def __init__(self, data, session=None):
+        super(FeedItemResource, self).__init__(None, session)
+        print data
+        self._prop_dict = parse_resource_dict(self._prop_defs, data)
+
+
+class FeedResource(ContainerResource):
+    
+    _prop_defs = {'size': None,
+                  'items': None,
+                  'previous': PropResourceLink('FeedResource'),
+                  'next': PropResourceLink('FeedResource')}
+    _item_cls = None
     
     def __init__(self, resource, session=None):
         super(FeedResource, self).__init__(resource, session)
-        
+             
     def __iter__(self):
-        if self._list_item_class is None:
-            pass
-        if self._data is not None:
+        if self._item_cls is not None:
+            item_list = self._prop_dict['items']
             while True:
-                for itm in self._data['items']:
-                    yield self._list_item_class(self._resource, itm, self._session)
+                for item in item_list:
+                    yield self._item_cls(item, self._session)
                 if not self._next_page():
                     raise StopIteration
+        else:
+            pass
                 
-    def _next_page(self):
-        if self._data is not None:
-            next_page = self._data.get('next')
-            if next_page is not None:
-                self._resource = next_page
-                self.init()
-                return True
+    def _prev_page(self):
+        link = self._prop_dict.get('prev')
+        if link is not None:
+            self._resource = link.resource
+            self.load()
+            return True
         else:
             return False
+    
+    def _next_page(self):
+        link = self._prop_dict.get('next')
+        if link is not None:
+            self._resource = link.resource
+            self.load()
+            return True
+        else:
+            return False
+
 
 class User(ContainerResource):
     
@@ -162,8 +187,8 @@ class User(ContainerResource):
     _prop_defs = {'userID': None,
                   'profile': PropResourceLink('Profile'),
                   'settings': PropResourceLink('Settings'),
-                  'fitness_activities': PropResourceLink('FitnessActivityFeed'),
-                  'strength_training_activities': PropResourceLink(''),
+                  'fitness_activities': PropResourceLink('FitnessActivityIter'),
+                  'strength_training_activities': PropResourceLink('StrengthActivityIter'),
                   'background_activities': PropResourceLink(''),
                   'sleep': PropResourceLink(''),
                   'nutrition': PropResourceLink(''),
@@ -190,6 +215,9 @@ class User(ContainerResource):
     
     def get_fitness_activity_iter(self):
         return self._get_link(self._prop_dict['fitness_activities'])
+    
+    def get_strength_activity_iter(self):
+        return self._get_link(self._prop_dict['strength_training_activities'])
     
 
 class Profile(ContainerResource):
@@ -249,19 +277,7 @@ class Settings(ContainerResource):
     
     def __init__(self, resource, session=None):
         super(Settings, self).__init__(resource, session)
-
-
-class FitnessActivityFeed(FeedResource):
-    
-    _content_type = ContentType.FITNESS_ACTIVITY_FEED
-    _prop_defs = {'size': None,
-                  'items': None,
-                  'previous': None,
-                  'next': None}
-    
-    def __init__(self, resource, session=None):
-        super(Settings, self).__init__(resource, session)
-
+        
 
 class PersonalRecords(ContainerResource):
     
@@ -283,9 +299,11 @@ class PersonalRecords(ContainerResource):
                         stat_val = stat['value']
                         stat_date = stat.get('date')
                         if stat_type == 'OVERALL':
-                            act_stats[stat_type] = {'value': stat_val / 1000.0,}
+                            act_stats[stat_type] = {'value': 
+                                                    parse_distance(stat_val),}
                         else:
-                            act_stats[stat_type] = {'value': stat_val,}
+                            act_stats[stat_type] = {'value': 
+                                                    parse_distance_km(stat_val),}
                         if stat_date is not None:
                             act_stats[stat_type]['date'] = stat_date
                     overall = act_stats.get('OVERALL')
@@ -294,3 +312,43 @@ class PersonalRecords(ContainerResource):
             else:
                 pass
         return prop_dict 
+
+
+class FitnessActivityFeedItem(FeedItemResource):
+    
+    _prop_defs = {'start_time': parse_datetime,
+                 'type': None,
+                 'duration': None,
+                 'total_distance': parse_distance_km,
+                 'uri': PropResourceLink('FitnessActivity')}
+    
+    def __init__(self, data, session=None):
+        super(FitnessActivityFeedItem, self).__init__(data, session)
+
+
+class FitnessActivityIter(FeedResource):
+    
+    _content_type = ContentType.FITNESS_ACTIVITY_FEED
+    _item_cls = FitnessActivityFeedItem
+    
+    def __init__(self, resource, session=None):
+        super(FitnessActivityIter, self).__init__(resource, session)
+
+
+class StrengthActivityFeedItem(FeedItemResource):
+    
+    _prop_defs = {'start_time': parse_datetime,
+                 'uri': PropResourceLink('StrengthActivity')}
+    
+    def __init__(self, data, session=None):
+        super(StrengthActivityFeedItem, self).__init__(data, session)
+
+
+class StrengthActivityIter(FeedResource):
+    
+    _content_type = ContentType.STRENGTH_ACTIVITY_FEED
+    _item_cls = StrengthActivityFeedItem
+    
+    def __init__(self, resource, session=None):
+        super(StrengthActivityIter, self).__init__(resource, session)
+        
