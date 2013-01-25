@@ -136,7 +136,6 @@ class FeedItemResource(BaseResource):
     
     def __init__(self, data, session=None):
         super(FeedItemResource, self).__init__(None, session)
-        print data
         self._prop_dict = parse_resource_dict(self._prop_defs, data)
 
 
@@ -150,17 +149,24 @@ class FeedResource(ContainerResource):
     
     def __init__(self, resource, session=None):
         super(FeedResource, self).__init__(resource, session)
+        self._iter = iter(self._prop_dict['items'])
              
     def __iter__(self):
         if self._item_cls is not None:
-            item_list = self._prop_dict['items']
-            while True:
-                for item in item_list:
-                    yield self._item_cls(item, self._session)
-                if not self._next_page():
-                    raise StopIteration
+            return self
         else:
             pass
+    
+    def next(self):
+        try:
+            item = self._iter.next()
+        except StopIteration:
+            if self._next_page():
+                self._iter = iter(self._prop_dict['items'])
+                item = self._iter.next()
+            else:
+                raise StopIteration
+        return self._item_cls(item, self._session)
                 
     def _prev_page(self):
         link = self._prop_dict.get('prev')
