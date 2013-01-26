@@ -17,9 +17,8 @@ import os
 import optparse
 import ConfigParser
 import bottle
-from healthgraph import RunKeeperAuthMgr, RunKeeperClient
+import healthgraph
 from beaker.middleware import SessionMiddleware
-
 
 __author__ = "Ali Onur Uyar"
 __copyright__ = "Copyright 2012, Ali Onur Uyar"
@@ -60,8 +59,8 @@ def index():
     if sess.has_key('rk_access_token'):
         bottle.redirect('/welcome')
     else:
-        rk_auth_mgr = RunKeeperAuthMgr(conf['client_id'], conf['client_secret'], 
-                                       '/'.join((conf['baseurl'], 'login',)))
+        rk_auth_mgr = healthgraph.AuthManager(conf['client_id'], conf['client_secret'], 
+                                          '/'.join((conf['baseurl'], 'login',)))
         rk_auth_uri = rk_auth_mgr.get_login_url()
         rk_button_img = rk_auth_mgr.get_login_button_url('blue', 'black', 300)
         return bottle.template('index.html', {'rk_button_img': rk_button_img,
@@ -72,8 +71,8 @@ def login():
     sess = bottle.request.environ['beaker.session']
     code = bottle.request.query.get('code')
     if code is not None:
-        rk_auth_mgr = RunKeeperAuthMgr(conf['client_id'], conf['client_secret'], 
-                                       '/'.join((conf['baseurl'], 'login',)))
+        rk_auth_mgr = healthgraph.AuthManager(conf['client_id'], conf['client_secret'], 
+                                              '/'.join((conf['baseurl'], 'login',)))
         access_token = rk_auth_mgr.get_access_token(code)
         sess['rk_access_token'] = access_token
         sess.save()
@@ -84,14 +83,15 @@ def welcome():
     sess = bottle.request.environ['beaker.session']
     access_token = sess.get('rk_access_token')
     if access_token is not None:
-        rk = RunKeeperClient(access_token)
-        profile = rk.get_profile()
-        records = rk.get_records()
-        activities = rk.get_activity_list(5)
+        user = healthgraph.User(session=healthgraph.Session(access_token))
+        profile = user.get_profile()
+        records = user.get_records()
+        act_iter = user.get_fitness_activity_iter()
+        activities = [act_iter.next() for _ in range(5)]
         return bottle.template('welcome.html', 
                                profile=profile,
                                activities=activities, 
-                               records=records)
+                               records=records.get_totals())
     else:
         bottle.redirect('/')
 
