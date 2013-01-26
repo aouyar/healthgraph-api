@@ -239,14 +239,14 @@ class User(Resource):
                   'settings': PropResourceLink('Settings'),
                   'fitness_activities': PropResourceLink('FitnessActivityIter'),
                   'strength_training_activities': PropResourceLink('StrengthActivityIter'),
-                  'background_activities': PropResourceLink(''),
-                  'sleep': PropResourceLink(''),
-                  'nutrition': PropResourceLink(''),
-                  'weight': PropResourceLink(''),
-                  'general_measurements': PropResourceLink(''),
-                  'diabetes': PropResourceLink(''),
+                  'background_activities': PropResourceLink('BackgroundActivityIter'),
+                  'sleep': PropResourceLink('SleepMeasurementIter'),
+                  'nutrition': PropResourceLink('NutritionMeasurementIter'),
+                  'weight': PropResourceLink('WeightMeasurementIter'),
+                  'general_measurements': PropResourceLink('GeneralMeasurementIter'),
+                  'diabetes': PropResourceLink('DiabetesMeasurementIter'),
                   'records': PropResourceLink('PersonalRecords'),
-                  'team': PropResourceLink(''),                
+                  'team': PropResourceLink('FriendIter'),                
                   }
     
     _feed_dict = {'fitness_activities': 'FitnessActivityIter',}
@@ -268,6 +268,9 @@ class User(Resource):
     
     def get_strength_activity_iter(self):
         return self._get_linked_resource(self._prop_dict['strength_training_activities'])
+    
+    def get_weight_measurement_iter(self):
+        return self._get_linked_resource(self._prop_dict['weight'])
     
 
 class Profile(Resource):
@@ -424,3 +427,26 @@ class StrengthActivityIter(ResourceFeedIter):
     def __init__(self, resource, session=None):
         super(StrengthActivityIter, self).__init__(resource, session)
 
+
+class WeightMeasurementFeedItem(FeedItem):
+    
+    _prop_defs = {'uri': PropResourceLink('WeightMeasurement'),
+                  'timestamp': parse_datetime,
+                  'weight': float,
+                  'height': None,
+                  'free_mass': None,
+                  'fat_percent': float,
+                  'mass_weight': float,
+                  'bmi': float}
+    
+    def __init__(self, data, session=None):
+        super(WeightMeasurementFeedItem, self).__init__(data, session)
+
+
+class WeightMeasurementIter(ResourceFeedIter):
+    
+    _content_type = ContentType.WEIGHT_MEASUREMENT_FEED
+    _item_cls = WeightMeasurementFeedItem
+    
+    def __init__(self, resource, session=None):
+        super(WeightMeasurementIter, self).__init__(resource, session)
