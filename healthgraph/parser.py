@@ -49,13 +49,13 @@ def parse_datetime(val):
         
 def parse_distance(val):
     try:
-        return float(val)
+        return float(val) / 1000
     except:
         return None
     
 def parse_distance_km(val):
     try:
-        return float(val) * 1000
+        return float(val)
     except:
         return None
     

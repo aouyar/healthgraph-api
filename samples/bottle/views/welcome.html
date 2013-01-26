@@ -37,7 +37,7 @@
 						<tr>
 							<td>{{ stats.get('start_time') }}</td>
 							<td>{{ stats.get('type') }}</td>
-							<td align="right">{{ '%.1f' % (stats.get('total_distance', 0) / 1000) }}</td>
+							<td align="right">{{ '%.1f' % stats.get('total_distance', 0) }}</td>
 						</tr>
 						%end		
 					</tbody>
@@ -58,11 +58,11 @@
 						%for sport, stats in records.items():
 						<tr>
 							<td>{{ sport }}</td>
-							<td align="right">{{ '%.1f' % (stats.get('THIS_WEEK', 0) / 1000) }}</td>
-							<td align="right">{{ '%.1f' % (stats.get('LAST_WEEK', 0) / 1000) }}</td>
-							<td align="right">{{ '%.1f' % (stats.get('THIS_MONTH', 0) / 1000) }}</td>
-							<td align="right">{{ '%.1f' % (stats.get('LAST_MONTH', 0) / 1000) }}</td>
-							<td align="right">{{ '%.1f' % (stats.get('OVERALL', 0) / 1000) }}</td>
+							<td align="right">{{ '%.1f' % stats.get('THIS_WEEK', 0) }}</td>
+							<td align="right">{{ '%.1f' % stats.get('LAST_WEEK', 0) }}</td>
+							<td align="right">{{ '%.1f' % stats.get('THIS_MONTH', 0) }}</td>
+							<td align="right">{{ '%.1f' % stats.get('LAST_MONTH', 0) }}</td>
+							<td align="right">{{ '%.1f' % stats.get('OVERALL', 0) }}</td>
 						</tr>
 						%end		
 					</tbody>
