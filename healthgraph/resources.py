@@ -9,7 +9,7 @@ and uploading Fitness Activity and Health Measurements information.
 """
 
 import inspect
-from collections import namedtuple
+from collections import namedtuple, MutableMapping
 from settings import USER_RESOURCE
 from session import get_session
 from parser import (parse_resource_dict, parse_bool, parse_distance, parse_distance_km, 
@@ -64,6 +64,19 @@ class ContentType:
     FRIEND_FEED = 'TeamFeed'
     FRIEND_INVITE = 'Invitation'
     FRIEND_REPLY = 'Reply'
+    
+    
+class PersonalRecordType:
+    """Personal record types."""    
+    
+    THIS_WEEK = 'THIS_WEEK'
+    THIS_MONTH = 'THIS_MONTH'
+    LAST_WEEK = 'LAST_WEEK'
+    LAST_MONTH = 'LAST_MONTH'
+    OVERALL = 'OVERALL'
+    BEST_ACTIVITY = 'BEST_ACTIVITY'
+    BEST_WEEK = 'BEST_WEEK'
+    BEST_MONTH = 'BEST_MONTH'
 
 
 class ResourceLink(namedtuple('ResourceLink', ('clsname', 'resource'))):
@@ -77,10 +90,24 @@ class PropResourceLink(object):
     
     def __call__(self, resource=None):
         return ResourceLink(self._clsname, resource)
+    
 
-
-class ContainerMixin(object):
-    pass
+class ContainerMixin(MutableMapping):
+    
+    def __getitem__(self, k):
+        return self._prop_dict[k]
+    
+    def __setitem__(self, k, v):
+        self._prop_dict[k] = v
+        
+    def __delitem__(self, k):
+        del self._prop_dict[k]
+        
+    def __len__(self):
+        return len(self._prop_dict)
+    
+    def __iter__(self):
+        return iter(self._prop_dict)
 
 
 class APIobject(object):
@@ -134,11 +161,14 @@ class BaseResource(APIobject):
         return parse_resource_dict(self._prop_defs, data)
 
 
-class ResourceItem(BaseResource, ContainerMixin):
+class ResourceItem(APIobject, ContainerMixin):
 
-    def __init__(self, data, session=None):
-        super(ResourceItem, self).__init__(None, session)
-        self._prop_dict = parse_resource_dict(self._prop_defs, data)
+    def __init__(self, data=None, session=None):
+        super(ResourceItem, self).__init__(session)
+        if data is not None:
+            self._prop_dict = parse_resource_dict(self._prop_defs, data)
+        else:
+            self._prop_dict = {}
 
         
 class Resource(BaseResource, ContainerMixin):
@@ -307,39 +337,61 @@ class PersonalRecords(Resource):
         super(PersonalRecords, self).__init__(resource, session)
 
     def _parse_data(self, data):
-        prop_dict = {}
+        prop_dict = {'totals': {},
+                     'bests': {},}
         for actrecs in data:
-            act_type = actrecs.get('activity_type')
-            if act_type:
-                act_stats = {}
-                stats = actrecs.get('stats')
-                if stats:
-                    for stat in stats:
-                        stat_type = stat['stat_type']
-                        stat_val = stat['value']
-                        stat_date = stat.get('date')
-                        if stat_type == 'OVERALL':
-                            act_stats[stat_type] = {'value': 
-                                                    parse_distance(stat_val),}
-                        else:
-                            act_stats[stat_type] = {'value': 
-                                                    parse_distance_km(stat_val),}
-                        if stat_date is not None:
-                            act_stats[stat_type]['date'] = stat_date
-                    overall = act_stats.get('OVERALL')
-                    if overall is not None and overall.get('value', 0) > 0:
-                        prop_dict[act_type] = act_stats
-            else:
-                pass
-        return prop_dict 
-
+            totals = {}
+            bests = {}
+            overall = 0
+            act_type = actrecs['activity_type']
+            for stats in actrecs['stats']:
+                stat_type = stats['stat_type']
+                stat_date = stats.get('date')
+                if stat_type == 'OVERALL':
+                    stat_dist = parse_distance(stats['value'])
+                    overall = stat_dist
+                else:
+                    stat_dist = parse_distance_km(stats['value'])
+                if stat_date is None:
+                    totals[stat_type] = stat_dist
+                else:
+                    bests[stat_type] = (stat_date, stat_dist)
+            if overall > 0:
+                if len(totals) > 0:
+                    prop_dict['totals'][act_type] = totals
+                if len(bests) > 0:
+                    prop_dict['bests'][act_type] = bests
+        return prop_dict
+    
+    def get_activity_types(self):
+        return self._prop_dict.keys()
+    
+    def get_totals(self):
+        return self._prop_dict['totals']
+    
+    def get_bests(self):
+        return self._prop_dict['bests']
+    
+    def get_activity_totals(self, activity_type):
+        try:
+            return self._prop_dict['totals'][activity_type]
+        except KeyError:
+            return None
+    
+    def get_activity_bests(self, activity_type):
+        try:
+            return self._prop_dict['bests'][activity_type]
+        except KeyError:
+            return None
+    
+        
 
 class FitnessActivityFeedItem(FeedItem):
     
     _prop_defs = {'start_time': parse_datetime,
                   'type': None,
                   'duration': None,
-                  'total_distance': parse_distance_km,
+                  'total_distance': parse_distance,
                   'uri': PropResourceLink('FitnessActivity')}
     
     def __init__(self, data, session=None):
@@ -371,4 +423,4 @@ class StrengthActivityIter(ResourceFeedIter):
     
     def __init__(self, resource, session=None):
         super(StrengthActivityIter, self).__init__(resource, session)
-        
+
