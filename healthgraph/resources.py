@@ -79,16 +79,43 @@ class PropResourceLink(object):
         return ResourceLink(self._clsname, resource)
 
 
-class BaseResource(object):
+class ContainerMixin(object):
+    pass
+
+
+class APIobject(object):
+    _prop_defs = {}
     
-    _content_type = None
-    
-    def __init__(self, resource = None, session=None):
+    def __init__(self, session=None):
+        self._prop_dict = {}
         if session is not None:
             self._session = session
         else:
             self._session = get_session()
+            
+    def _get_resource_data(self, resource, content_type):
+        resp = self._session.get(resource, content_type)
+        return resp.json() # TODO - Error Checking
+    
+    def _get_linked_resource(self, link):
+        if link is not None:
+            cls = globals().get(link.clsname)
+            if inspect.isclass(cls) and issubclass(cls, BaseResource):
+                return cls(link.resource, self._session)
+            else:
+                pass
+        else:
+            return None
+
+
+class BaseResource(APIobject):
+    
+    _content_type = None
+    
+    def __init__(self, resource = None, session=None):
+        super(BaseResource,self).__init__(session)
         self._resource = resource
+        self.load()
         
     @property
     def resource(self):
@@ -98,57 +125,38 @@ class BaseResource(object):
     def content_type(self):
         return self._content_type
     
-    def _get_resource(self):
-        resp = self._session.get(self._resource, self._content_type)
-        return resp.json() # TODO - Error Checking
-    
-    def _get_link(self, link):
-        if link is not None:
-            cls = globals().get(link.clsname)
-            if inspect.isclass(cls) and issubclass(cls, BaseResource):
-                return cls(link.resource, self._session)
-            else:
-                pass
-        else:
-            return None
-        
-class ContainerResource(BaseResource):
-    
-    _prop_defs = {}
-    
-    def __init__(self, resource = None, session=None):
-        super(ContainerResource, self).__init__(resource, session)
-        self._prop_dict = {}
-        self.load()
-        
     def load(self):
         if self._resource is not None:
-            data = self._get_resource()
+            data = self._get_resource_data(self._resource, self._content_type)
             self._prop_dict = self._parse_data(data)
             
     def _parse_data(self, data):
         return parse_resource_dict(self._prop_defs, data)
 
 
-class FeedItemResource(BaseResource):
-    
-    _prop_defs = {}
-    
+class ResourceItem(BaseResource, ContainerMixin):
+
     def __init__(self, data, session=None):
-        super(FeedItemResource, self).__init__(None, session)
+        super(ResourceItem, self).__init__(None, session)
         self._prop_dict = parse_resource_dict(self._prop_defs, data)
 
+        
+class Resource(BaseResource, ContainerMixin):
+    
+    def __init__(self, resource = None, session=None):
+        super(Resource, self).__init__(resource, session)
 
-class FeedResource(ContainerResource):
+
+class ResourceFeedIter(BaseResource):
     
     _prop_defs = {'size': None,
                   'items': None,
-                  'previous': PropResourceLink('FeedResource'),
-                  'next': PropResourceLink('FeedResource')}
+                  'previous': PropResourceLink('ResourceFeedIter'),
+                  'next': PropResourceLink('ResourceFeedIter')}
     _item_cls = None
     
     def __init__(self, resource, session=None):
-        super(FeedResource, self).__init__(resource, session)
+        super(ResourceFeedIter, self).__init__(resource, session)
         self._iter = iter(self._prop_dict['items'])
              
     def __iter__(self):
@@ -187,7 +195,13 @@ class FeedResource(ContainerResource):
             return False
 
 
-class User(ContainerResource):
+class FeedItem(ResourceItem):
+    
+    def __init__(self, data, session=None):
+        super(FeedItem, self).__init__(data, session)
+
+
+class User(Resource):
     
     _content_type = ContentType.USER
     _prop_defs = {'userID': None,
@@ -211,22 +225,22 @@ class User(ContainerResource):
         super(User, self).__init__(USER_RESOURCE, session)
     
     def get_profile(self):
-        return self._get_link(self._prop_dict['profile'])
+        return self._get_linked_resource(self._prop_dict['profile'])
         
     def get_settings(self):
-        return self._get_link(self._prop_dict['settings'])
+        return self._get_linked_resource(self._prop_dict['settings'])
     
     def get_records(self):
-        return self._get_link(self._prop_dict['records'])
+        return self._get_linked_resource(self._prop_dict['records'])
     
     def get_fitness_activity_iter(self):
-        return self._get_link(self._prop_dict['fitness_activities'])
+        return self._get_linked_resource(self._prop_dict['fitness_activities'])
     
     def get_strength_activity_iter(self):
-        return self._get_link(self._prop_dict['strength_training_activities'])
+        return self._get_linked_resource(self._prop_dict['strength_training_activities'])
     
 
-class Profile(ContainerResource):
+class Profile(Resource):
     
     _content_type = ContentType.PROFILE
     _prop_defs = {'name': None,
@@ -246,7 +260,7 @@ class Profile(ContainerResource):
         super(Profile, self).__init__(resource, session)
 
 
-class Settings(ContainerResource):
+class Settings(Resource):
     
     _content_type = ContentType.SETTINGS
     _prop_defs = {'facebook_connected': parse_bool,
@@ -285,7 +299,7 @@ class Settings(ContainerResource):
         super(Settings, self).__init__(resource, session)
         
 
-class PersonalRecords(ContainerResource):
+class PersonalRecords(Resource):
     
     _content_type = ContentType.PERSONAL_RECORDS
 
@@ -320,19 +334,19 @@ class PersonalRecords(ContainerResource):
         return prop_dict 
 
 
-class FitnessActivityFeedItem(FeedItemResource):
+class FitnessActivityFeedItem(FeedItem):
     
     _prop_defs = {'start_time': parse_datetime,
-                 'type': None,
-                 'duration': None,
-                 'total_distance': parse_distance_km,
-                 'uri': PropResourceLink('FitnessActivity')}
+                  'type': None,
+                  'duration': None,
+                  'total_distance': parse_distance_km,
+                  'uri': PropResourceLink('FitnessActivity')}
     
     def __init__(self, data, session=None):
         super(FitnessActivityFeedItem, self).__init__(data, session)
 
 
-class FitnessActivityIter(FeedResource):
+class FitnessActivityIter(ResourceFeedIter):
     
     _content_type = ContentType.FITNESS_ACTIVITY_FEED
     _item_cls = FitnessActivityFeedItem
@@ -341,16 +355,16 @@ class FitnessActivityIter(FeedResource):
         super(FitnessActivityIter, self).__init__(resource, session)
 
 
-class StrengthActivityFeedItem(FeedItemResource):
+class StrengthActivityFeedItem(FeedItem):
     
     _prop_defs = {'start_time': parse_datetime,
-                 'uri': PropResourceLink('StrengthActivity')}
+                  'uri': PropResourceLink('StrengthActivity')}
     
     def __init__(self, data, session=None):
         super(StrengthActivityFeedItem, self).__init__(data, session)
 
 
-class StrengthActivityIter(FeedResource):
+class StrengthActivityIter(ResourceFeedIter):
     
     _content_type = ContentType.STRENGTH_ACTIVITY_FEED
     _item_cls = StrengthActivityFeedItem
