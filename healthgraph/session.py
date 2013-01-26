@@ -16,7 +16,7 @@ __author__ = "Ali Onur Uyar"
 __copyright__ = "Copyright 2012, Ali Onur Uyar"
 __credits__ = []
 __license__ = "GPL"
-__version__ = "0.2.2"
+__version__ = "0.3.0"
 __email__ = "aouyar at gmail.com"
 __status__ = "Development"
     
