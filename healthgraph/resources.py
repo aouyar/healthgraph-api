@@ -191,6 +191,9 @@ class ResourceFeedIter(BaseResource):
     def __init__(self, resource, session=None):
         super(ResourceFeedIter, self).__init__(resource, session=session)
         self._iter = iter(self._prop_dict['items'])
+        
+    def count(self):
+        return self._prop_defs['size']
              
     def __iter__(self):
         if self._item_cls is not None:
