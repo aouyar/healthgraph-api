@@ -13,6 +13,7 @@ import urlparse
 import inspect
 from collections import namedtuple, MutableMapping
 import settings
+import content_type
 import sessionmgr
 from parser import (parse_resource_dict, 
                     parse_bool, 
@@ -29,47 +30,6 @@ __version__ = "0.3.0"
 __email__ = "aouyar at gmail.com"
 __status__ = "Development"
 
-    
-class ContentType:
-    """Content Types used by Health Graph API"""
-    
-    USER = 'User'
-    PROFILE = 'Profile'
-    SETTINGS = 'Settings'
-    FITNESS_ACTIVITY = 'FitnessActivity'
-    FITNESS_ACTIVITY_FEED = 'FitnessActivityFeed'
-    FITNESS_ACTIVITY_SUMMARY = 'FitnessActivitySummary'
-    FITNESS_ACTIVITY_NEW = 'NewFitnessActivity'
-    FITNESS_ACTIVITY_LIVE = 'LiveFitnessActivity'
-    FITNESS_ACTIVITY_LIVE_UPDATE = 'LiveFitnessActivityUpdate'
-    FITNESS_ACTIVITY_LIVE_END = 'LiveFitnessActivityCompletion'
-    STRENGTH_ACTIVITY = ' StrengthTrainingActivity'
-    STRENGTH_ACTIVITY_FEED = 'StrengthTrainingActivityFeed'
-    STRENGTH_ACTIVITY_NEW = 'NewStrengthTrainingActivity'
-    BACKGROUND_ACTIVITY = 'BackgroundActivitySet'
-    BACKGROUND_ACTIVITY_FEED = 'BackgroundActivitySetFeed'
-    BACKGROUND_ACTIVITY_NEW = 'NewBackgroundActivitySet'
-    SLEEP_MEASUREMENT = 'SleepSet'
-    SLEEP_MEASUREMENT_FEED = 'SleepSetFeed'
-    SLEEP_MEASUREMENT_NEW = 'NewSleepSet'
-    NUTRITION_MEASUREMENT = 'NutritionSet'
-    NUTRITION_MEASUREMENT_FEED = 'NutritionSetFeed'
-    NUTRITION_MEASUREMENT_NEW = 'NewNutritionSet'
-    WEIGHT_MEASUREMENT = 'WeightSet'
-    WEIGHT_MEASUREMENT_FEED = 'WeightSetFeed'
-    WEIGHT_MEASUREMENT_NEW = 'NewWeightSet'
-    GENERAL_BODY_MEASUREMENT = 'GeneralMeasurementSet'
-    GENERAL_BODY_MEASUREMENT_FEED = 'GeneralMeasurementSetFeed'
-    GENERAL_BODY_MEASUREMENT_NEW = 'NewGeneralMeasurementSet'
-    DIABETES_MEASUREMENT = 'DiabetesMeasurementSet'
-    DIABETES_MEASUREMENT_FEED = 'DiabetesMeasurementSetFeed'
-    DIABETES_MEASUREMENT_NEW = 'NewDiabetesMeasurementSet'
-    PERSONAL_RECORDS = 'Records'
-    FRIEND = 'Member'
-    FRIEND_FEED = 'TeamFeed'
-    FRIEND_INVITE = 'Invitation'
-    FRIEND_REPLY = 'Reply'
-    
     
 class PersonalRecordType:
     """Personal record types."""    
@@ -300,7 +260,7 @@ class FeedItem(ResourceItem):
 
 class User(Resource):
     
-    _content_type = ContentType.USER
+    _content_type = content_type.USER
     _prop_defs = {'userID': None,
                   'profile': PropResourceLink('Profile'),
                   'settings': PropResourceLink('Settings'),
@@ -365,7 +325,7 @@ class User(Resource):
 
 class Profile(Resource):
     
-    _content_type = ContentType.PROFILE
+    _content_type = content_type.PROFILE
     _prop_defs = {'name': None,
                   'location': None,
                   'athlete_type': None,
@@ -386,7 +346,7 @@ class Profile(Resource):
 
 class Settings(Resource):
     
-    _content_type = ContentType.SETTINGS
+    _content_type = content_type.SETTINGS
     _prop_defs = {'facebook_connected': parse_bool,
                   'twitter_connected': parse_bool,
                   'foursquare_connected': parse_bool,
@@ -425,7 +385,7 @@ class Settings(Resource):
 
 class PersonalRecords(Resource):
     
-    _content_type = ContentType.PERSONAL_RECORDS
+    _content_type = content_type.PERSONAL_RECORDS
 
     def __init__(self, resource, session=None):
         super(PersonalRecords, self).__init__(resource, session=session)
@@ -480,7 +440,7 @@ class PersonalRecords(Resource):
 
 class FitnessActivity(Resource):
     
-    _content_type = ContentType.FITNESS_ACTIVITY
+    _content_type = content_type.FITNESS_ACTIVITY
     _prop_defs = {'uri': PropResourceLink('FitnessActivity'),
                   'userID': None,
                   'type': None,
@@ -535,7 +495,7 @@ class FitnessActivity(Resource):
 
 class FitnessActivitySummary(Resource):
     
-    _content_type = ContentType.FITNESS_ACTIVITY_SUMMARY
+    _content_type = content_type.FITNESS_ACTIVITY_SUMMARY
     _prop_defs = {'uri': PropResourceLink('FitnessActivity'),
                   'userID': None,
                   'type': None,
@@ -583,7 +543,7 @@ class FitnessActivityFeedItem(FeedItem):
 
 class FitnessActivityIter(ResourceFeedIter):
     
-    _content_type = ContentType.FITNESS_ACTIVITY_FEED
+    _content_type = content_type.FITNESS_ACTIVITY_FEED
     _item_cls = FitnessActivityFeedItem
     
     def __init__(self, resource, 
@@ -612,7 +572,7 @@ class StrengthActivityFeedItem(FeedItem):
 
 class StrengthActivityIter(ResourceFeedIter):
     
-    _content_type = ContentType.STRENGTH_ACTIVITY_FEED
+    _content_type = content_type.STRENGTH_ACTIVITY_FEED
     _item_cls = StrengthActivityFeedItem
     
     def __init__(self, resource, 
@@ -647,7 +607,7 @@ class WeightMeasurementFeedItem(FeedItem):
 
 class WeightMeasurementIter(ResourceFeedIter):
     
-    _content_type = ContentType.WEIGHT_MEASUREMENT_FEED
+    _content_type = content_type.WEIGHT_MEASUREMENT_FEED
     _item_cls = WeightMeasurementFeedItem
     
     def __init__(self, resource, 
