@@ -143,7 +143,7 @@ class BaseResource(APIobject):
     _content_type = None
     
     def __init__(self, resource = None, session=None):
-        super(BaseResource,self).__init__(session)
+        super(BaseResource,self).__init__(session=session)
         self._resource = resource
         self.load()
         
@@ -167,7 +167,7 @@ class BaseResource(APIobject):
 class ResourceItem(APIobject, ContainerMixin):
 
     def __init__(self, data=None, session=None):
-        super(ResourceItem, self).__init__(session)
+        super(ResourceItem, self).__init__(session=session)
         if data is not None:
             self._prop_dict = parse_resource_dict(self._prop_defs, data)
         else:
@@ -177,7 +177,7 @@ class ResourceItem(APIobject, ContainerMixin):
 class Resource(BaseResource, ContainerMixin):
     
     def __init__(self, resource = None, session=None):
-        super(Resource, self).__init__(resource, session)
+        super(Resource, self).__init__(resource, session=session)
 
 
 class ResourceFeedIter(BaseResource):
@@ -189,7 +189,7 @@ class ResourceFeedIter(BaseResource):
     _item_cls = None
     
     def __init__(self, resource, session=None):
-        super(ResourceFeedIter, self).__init__(resource, session)
+        super(ResourceFeedIter, self).__init__(resource, session=session)
         self._iter = iter(self._prop_dict['items'])
              
     def __iter__(self):
@@ -231,7 +231,7 @@ class ResourceFeedIter(BaseResource):
 class FeedItem(ResourceItem):
     
     def __init__(self, data, session=None):
-        super(FeedItem, self).__init__(data, session)
+        super(FeedItem, self).__init__(data, session=session)
 
 
 class User(Resource):
@@ -253,7 +253,7 @@ class User(Resource):
                   }
     
     def __init__(self, session=None):
-        super(User, self).__init__(USER_RESOURCE, session)
+        super(User, self).__init__(USER_RESOURCE, session=session)
     
     def get_profile(self):
         return self._get_linked_resource(self._prop_dict['profile'])
@@ -291,7 +291,7 @@ class Profile(Resource):
                   }
     
     def __init__(self, resource, session=None):
-        super(Profile, self).__init__(resource, session)
+        super(Profile, self).__init__(resource, session=session)
 
 
 class Settings(Resource):
@@ -330,7 +330,7 @@ class Settings(Resource):
                   }
     
     def __init__(self, resource, session=None):
-        super(Settings, self).__init__(resource, session)
+        super(Settings, self).__init__(resource, session=session)
         
 
 class PersonalRecords(Resource):
@@ -338,7 +338,7 @@ class PersonalRecords(Resource):
     _content_type = ContentType.PERSONAL_RECORDS
 
     def __init__(self, resource, session=None):
-        super(PersonalRecords, self).__init__(resource, session)
+        super(PersonalRecords, self).__init__(resource, session=session)
 
     def _parse_data(self, data):
         prop_dict = {'totals': {}, 'bests': {},}
@@ -432,7 +432,7 @@ class FitnessActivity(Resource):
                   }
     
     def __init__(self, resource, session=None):
-        super(FitnessActivity, self).__init__(resource, session)
+        super(FitnessActivity, self).__init__(resource, session=session)
 
     def get_prev_activity(self):
         return self._get_linked_resource(self._prop_dict['previous'])
@@ -462,7 +462,7 @@ class FitnessActivitySummary(Resource):
                   }
     
     def __init__(self, resource, session=None):
-        super(FitnessActivitySummary, self).__init__(resource, session)
+        super(FitnessActivitySummary, self).__init__(resource, session=session)
         
     def get_activity_detail(self):
         return self._get_linked_resource(self._prop_dict['uri'])
@@ -478,7 +478,7 @@ class FitnessActivityFeedItem(FeedItem):
                   }
     
     def __init__(self, data, session=None):
-        super(FitnessActivityFeedItem, self).__init__(data, session)
+        super(FitnessActivityFeedItem, self).__init__(data, session=session)
         
     def get_activity_detail(self):
         return self._get_linked_resource(self._prop_dict['uri'])
@@ -493,7 +493,7 @@ class FitnessActivityIter(ResourceFeedIter):
     _item_cls = FitnessActivityFeedItem
     
     def __init__(self, resource, session=None):
-        super(FitnessActivityIter, self).__init__(resource, session)
+        super(FitnessActivityIter, self).__init__(resource, session=session)
 
 
 class StrengthActivityFeedItem(FeedItem):
@@ -502,7 +502,7 @@ class StrengthActivityFeedItem(FeedItem):
                   'uri': PropResourceLink('StrengthActivity')}
     
     def __init__(self, data, session=None):
-        super(StrengthActivityFeedItem, self).__init__(data, session)
+        super(StrengthActivityFeedItem, self).__init__(data, session=session)
 
 
 class StrengthActivityIter(ResourceFeedIter):
@@ -511,7 +511,7 @@ class StrengthActivityIter(ResourceFeedIter):
     _item_cls = StrengthActivityFeedItem
     
     def __init__(self, resource, session=None):
-        super(StrengthActivityIter, self).__init__(resource, session)
+        super(StrengthActivityIter, self).__init__(resource, session=session)
 
 
 class WeightMeasurementFeedItem(FeedItem):
@@ -526,7 +526,7 @@ class WeightMeasurementFeedItem(FeedItem):
                   'bmi': float}
     
     def __init__(self, data, session=None):
-        super(WeightMeasurementFeedItem, self).__init__(data, session)
+        super(WeightMeasurementFeedItem, self).__init__(data, session=session)
 
 
 class WeightMeasurementIter(ResourceFeedIter):
@@ -535,4 +535,4 @@ class WeightMeasurementIter(ResourceFeedIter):
     _item_cls = WeightMeasurementFeedItem
     
     def __init__(self, resource, session=None):
-        super(WeightMeasurementIter, self).__init__(resource, session)
+        super(WeightMeasurementIter, self).__init__(resource, session=session)
