@@ -8,6 +8,8 @@ and uploading Fitness Activity and Health Measurements information.
 
 """
 
+import urllib
+import urlparse
 import inspect
 from collections import namedtuple, MutableMapping
 import settings
@@ -209,6 +211,7 @@ class ResourceFeedIter(BaseResource):
     def __init__(self, resource, 
                  date_min=None, date_max=None, 
                  mod_date_min=None, mod_date_max=None,
+                 descending=True,
                  session=None):
         func_params = locals()
         params = {'pageSize': settings.DEFAULT_PAGE_SIZE,}
@@ -221,7 +224,13 @@ class ResourceFeedIter(BaseResource):
                 params[api_key] = val
         super(ResourceFeedIter, self).__init__(resource, params=params,
                                                session=session)
-        self._iter = iter(self._prop_dict['items'])
+        self._descending = descending
+        if descending:
+            self._iter = iter(self._prop_dict['items'])
+        else:
+            self._last_page()
+            self._iter = reversed(self._prop_dict['items'])
+            
         
     def count(self):
         return self._prop_dict['size']
@@ -236,15 +245,18 @@ class ResourceFeedIter(BaseResource):
         try:
             item = self._iter.next()
         except StopIteration:
-            if self._next_page():
+            if self._descending and self._next_page():
                 self._iter = iter(self._prop_dict['items'])
+                item = self._iter.next()
+            elif not self._descending and self._prev_page():
+                self._iter = reversed(self._prop_dict['items'])
                 item = self._iter.next()
             else:
                 raise StopIteration
         return self._item_cls(item, self._session)
                 
     def _prev_page(self):
-        link = self._prop_dict.get('prev')
+        link = self._prop_dict.get('previous')
         if link is not None:
             self._resource = link.resource
             self.load()
@@ -258,6 +270,24 @@ class ResourceFeedIter(BaseResource):
             self._resource = link.resource
             self.load()
             return True
+        else:
+            return False
+        
+    def _last_page(self):
+        link = self._prop_dict.get('next')
+        if link is not None:
+            size = self.count()
+            last_page = size / settings.DEFAULT_PAGE_SIZE
+            if size % settings.DEFAULT_PAGE_SIZE == 0:
+                last_page -= 1
+            if last_page > 0:
+                self._resource, qs = urllib.splitquery(link.resource)
+                params = urlparse.parse_qs(qs)
+                params['page'] = last_page
+                self.load(params=params)
+                return True
+            else:
+                return False
         else:
             return False
 
@@ -301,30 +331,36 @@ class User(Resource):
     
     def get_fitness_activity_iter(self, 
                                   date_min=None, date_max=None, 
-                                  mod_date_min=None, mod_date_max=None):
+                                  mod_date_min=None, mod_date_max=None,
+                                  descending=True):
         return self._get_linked_resource(self._prop_dict['fitness_activities'],
                                          date_min=date_min, 
                                          date_max=date_max,
                                          mod_date_min=mod_date_min,
-                                         mod_date_max=mod_date_max)
+                                         mod_date_max=mod_date_max,
+                                         descending=descending)
     
     def get_strength_activity_iter(self,
                                    date_min=None, date_max=None, 
-                                   mod_date_min=None, mod_date_max=None):
+                                   mod_date_min=None, mod_date_max=None,
+                                   descending=True):
         return self._get_linked_resource(self._prop_dict['strength_training_activities'],
                                          date_min=date_min, 
                                          date_max=date_max,
                                          mod_date_min=mod_date_min,
-                                         mod_date_max=mod_date_max)
+                                         mod_date_max=mod_date_max,
+                                         descending=descending)
     
     def get_weight_measurement_iter(self,
                                     date_min=None, date_max=None, 
-                                    mod_date_min=None, mod_date_max=None):
+                                    mod_date_min=None, mod_date_max=None,
+                                    descending=True):
         return self._get_linked_resource(self._prop_dict['weight'],
                                          date_min=date_min, 
                                          date_max=date_max,
                                          mod_date_min=mod_date_min,
-                                         mod_date_max=mod_date_max)
+                                         mod_date_max=mod_date_max,
+                                         descending=descending)
     
 
 class Profile(Resource):
@@ -553,12 +589,14 @@ class FitnessActivityIter(ResourceFeedIter):
     def __init__(self, resource, 
                  date_min=None, date_max=None, 
                  mod_date_min=None, mod_date_max=None,
+                 descending=True,
                  session=None):
         super(FitnessActivityIter, self).__init__(resource,
                                                   date_min=date_min,
                                                   date_max=date_max,
                                                   mod_date_min=mod_date_min,
-                                                  mod_date_max=mod_date_max, 
+                                                  mod_date_max=mod_date_max,
+                                                  descending=descending,
                                                   session=session)
 
 
@@ -580,12 +618,14 @@ class StrengthActivityIter(ResourceFeedIter):
     def __init__(self, resource, 
                  date_min=None, date_max=None, 
                  mod_date_min=None, mod_date_max=None,
+                 descending=True,
                  session=None):
         super(StrengthActivityIter, self).__init__(resource, 
                                                    date_min=date_min,
                                                    date_max=date_max,
                                                    mod_date_min=mod_date_min,
-                                                   mod_date_max=mod_date_max, 
+                                                   mod_date_max=mod_date_max,
+                                                   descending=descending, 
                                                    session=session)
 
 
@@ -613,10 +653,12 @@ class WeightMeasurementIter(ResourceFeedIter):
     def __init__(self, resource, 
                  date_min=None, date_max=None, 
                  mod_date_min=None, mod_date_max=None,
+                 descending=True,
                  session=None):
         super(WeightMeasurementIter, self).__init__(resource, 
                                                     date_min=date_min,
                                                     date_max=date_max,
                                                     mod_date_min=mod_date_min,
-                                                    mod_date_max=mod_date_max, 
+                                                    mod_date_max=mod_date_max,
+                                                    descending=descending, 
                                                     session=session)
