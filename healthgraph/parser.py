@@ -10,6 +10,7 @@ This module contains the classes and methods for parsing Health Graph API data.
 import re
 from datetime import date, datetime
 from settings import MONTH2NUM, NUM2MONTH
+from exceptions import ParseValueError
 
 __author__ = "Ali Onur Uyar"
 __copyright__ = "Copyright 2012, Ali Onur Uyar"
@@ -21,43 +22,59 @@ __status__ = "Development"
 
     
 def parse_bool(val):
-    if isinstance(val, bool):
+    if val is None:
+        return None
+    elif isinstance(val, bool):
         return val
     elif val.lower() == 'true':
         return True
     elif val.lower() == 'false':
         return False
     else:
-        return None
+        raise ParseValueError("Error parsing bool value.")
 
-def parse_date(val,):
-    mobj = re.match('\w+,\s*(\d+)\s+(\w+)\s+(\d+)', val)
-    if mobj is not None:
-        return date(int(mobj.group(3)), 
-                    MONTH2NUM[mobj.group(2)],
-                    int(mobj.group(1)))
+def parse_date(val):
+    if val is None:
+        return None
+    else:
+        mobj = re.match('\w+,\s*(\d+)\s+(\w+)\s+(\d+)', val)
+        if mobj is not None:
+            return date(int(mobj.group(3)), 
+                        MONTH2NUM[mobj.group(2)],
+                        int(mobj.group(1)))
+        else:
+            ParseValueError("Error parsing date value.")
             
 def parse_datetime(val):
-    mobj = re.match('\w+,\s*(\d+)\s+(\w+)\s+(\d+)\s+(\d+):(\d+):(\d+)', val)
-    if mobj is not None:
-        return datetime(int(mobj.group(3)), 
-                        MONTH2NUM[mobj.group(2)],
-                        int(mobj.group(1)),
-                        int(mobj.group(4)),
-                        int(mobj.group(5)),
-                        int(mobj.group(6)),)
+    if val is None:
+        return None
+    else:
+        mobj = re.match('\w+,\s*(\d+)\s+(\w+)\s+(\d+)\s+(\d+):(\d+):(\d+)', val)
+        if mobj is not None:
+            return datetime(int(mobj.group(3)), 
+                            MONTH2NUM[mobj.group(2)],
+                            int(mobj.group(1)),
+                            int(mobj.group(4)),
+                            int(mobj.group(5)),
+                            int(mobj.group(6)),)
+        else:
+            ParseValueError("Error parsing date-time value.")
         
 def parse_distance(val):
+    if val is None:
+        return None
     try:
         return float(val) / 1000
     except:
-        return None
+        raise ParseValueError("Error parsing distance value.")
     
 def parse_distance_km(val):
+    if val is None:
+        return None
     try:
         return float(val)
     except:
-        return None
+        raise ParseValueError("Error parsing distance value.")
     
 def parse_resource_dict(prop_defs, data):
     prop_dict = dict([(k, None) for k in prop_defs])
@@ -71,4 +88,3 @@ def parse_resource_dict(prop_defs, data):
         else:
             pass
     return prop_dict
-

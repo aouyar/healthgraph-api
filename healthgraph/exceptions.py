@@ -33,8 +33,22 @@ class RemoteError(Error):
 
 
 class NoSessionError(Error):
-    """Raised when remote API end-point access is attempted before completing
-    initialization of session.
+    """Raised when remote API end-point access is attempted before initialization 
+    of session.
+    
+    """
+    pass
+
+
+class ParseError(Error):
+    """Error in parsing data returned by API.
+    
+    """
+    pass
+
+
+class ParseValueError(Error):
+    """Error in parsing value returned by API.
     
     """
     pass
