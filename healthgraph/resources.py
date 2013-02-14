@@ -111,10 +111,12 @@ class ContainerMixin(MutableMapping):
 
 
 class APIobject(object):
-    _prop_defs = {}
+    _prop_defs = None
+    _prop_main = None
     
     def __init__(self, session=None):
         self._prop_dict = {}
+        self._resource = None
         if session is not None:
             self._session = session
         else:
@@ -136,6 +138,17 @@ class APIobject(object):
                 pass
         else:
             return None
+        
+    def __str__(self):
+        if self._resource is not None:
+            prop_strs = ["resource=%s" % self._resource,]
+        else:
+            prop_strs = []
+        for k in self._prop_main:
+            if self._prop_dict[k] is not None:
+                prop_strs.append("%s=%s" % (k, self._prop_dict[k]))
+        return "HealthGraph API: %s(%s)" % (self.__class__.__name__,
+                                             ', '.join(prop_strs))
 
 
 class BaseResource(APIobject):
@@ -146,7 +159,7 @@ class BaseResource(APIobject):
         super(BaseResource,self).__init__(session=session)
         self._resource = resource
         self.load()
-        
+            
     @property
     def resource(self):
         return self._resource
@@ -187,13 +200,14 @@ class ResourceFeedIter(BaseResource):
                   'previous': PropResourceLink('ResourceFeedIter'),
                   'next': PropResourceLink('ResourceFeedIter')}
     _item_cls = None
+    _prop_main = ('size',)
     
     def __init__(self, resource, session=None):
         super(ResourceFeedIter, self).__init__(resource, session=session)
         self._iter = iter(self._prop_dict['items'])
         
     def count(self):
-        return self._prop_defs['size']
+        return self._prop_dict['size']
              
     def __iter__(self):
         if self._item_cls is not None:
@@ -254,6 +268,7 @@ class User(Resource):
                   'records': PropResourceLink('PersonalRecords'),
                   'team': PropResourceLink('FriendIter'),                
                   }
+    _prop_main = ('userID',)
     
     def __init__(self, session=None):
         super(User, self).__init__(USER_RESOURCE, session=session)
@@ -292,6 +307,7 @@ class Profile(Resource):
                   'medium_picture': None,
                   'large_picture': None,
                   }
+    _prop_main = ('name', 'gender', 'birthday',)
     
     def __init__(self, resource, session=None):
         super(Profile, self).__init__(resource, session=session)
@@ -334,7 +350,7 @@ class Settings(Resource):
     
     def __init__(self, resource, session=None):
         super(Settings, self).__init__(resource, session=session)
-        
+      
 
 class PersonalRecords(Resource):
     
@@ -434,6 +450,8 @@ class FitnessActivity(Resource):
                   'nearest_teammate_diabetes': None,
                   }
     
+    _prop_main = ('type', 'start_time',)
+    
     def __init__(self, resource, session=None):
         super(FitnessActivity, self).__init__(resource, session=session)
 
@@ -463,6 +481,7 @@ class FitnessActivitySummary(Resource):
                   'source': None,
                   'activity': None,
                   }
+    _prop_main = ('type', 'start_time',)
     
     def __init__(self, resource, session=None):
         super(FitnessActivitySummary, self).__init__(resource, session=session)
@@ -479,6 +498,7 @@ class FitnessActivityFeedItem(FeedItem):
                   'total_distance': parse_distance,
                   'uri': PropResourceLink('FitnessActivity'),
                   }
+    _prop_main = ('type', 'start_time',)
     
     def __init__(self, data, session=None):
         super(FitnessActivityFeedItem, self).__init__(data, session=session)
@@ -503,6 +523,7 @@ class StrengthActivityFeedItem(FeedItem):
     
     _prop_defs = {'start_time': parse_datetime,
                   'uri': PropResourceLink('StrengthActivity')}
+    _prop_main = ('start_time',)
     
     def __init__(self, data, session=None):
         super(StrengthActivityFeedItem, self).__init__(data, session=session)
@@ -527,6 +548,7 @@ class WeightMeasurementFeedItem(FeedItem):
                   'fat_percent': float,
                   'mass_weight': float,
                   'bmi': float}
+    _prop_main = ('timestamp',)
     
     def __init__(self, data, session=None):
         super(WeightMeasurementFeedItem, self).__init__(data, session=session)
