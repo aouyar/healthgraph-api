@@ -11,8 +11,14 @@ client secret for use with the Health Graph API.
 """
 
 from authmgr import AuthManager
-from session import Session, init_session, get_session
-from resources import User, Profile, Settings
+from sessionmgr import Session, NullSession, init_session, get_session
+from resources import (ContentType, PersonalRecordType,
+                       ResourceLink,
+                       User, Profile, Settings, PersonalRecords, 
+                       FitnessActivity, FitnessActivitySummary, 
+                       FitnessActivityFeedItem, FitnessActivityIter,
+                       StrengthActivityFeedItem, StrengthActivityIter,
+                       WeightMeasurementFeedItem, WeightMeasurementIter,)
 
 
 __author__ = "Ali Onur Uyar"

@@ -10,9 +10,11 @@ and uploading Fitness Activity and Health Measurements information.
 
 import inspect
 from collections import namedtuple, MutableMapping
-from settings import USER_RESOURCE
-from session import get_session
-from parser import (parse_resource_dict, parse_bool, parse_distance, parse_distance_km, 
+import settings
+import sessionmgr
+from parser import (parse_resource_dict, 
+                    parse_bool, 
+                    parse_distance, parse_distance_km, 
                     parse_date, parse_datetime, 
                     parse_date_param)
 
@@ -121,7 +123,7 @@ class APIobject(object):
         if session is not None:
             self._session = session
         else:
-            self._session = get_session()
+            self._session = sessionmgr.get_session()
             
     def _get_resource_data(self, resource, content_type, params=None):
         resp = self._session.get(resource, content_type, params)
@@ -209,14 +211,14 @@ class ResourceFeedIter(BaseResource):
                  mod_date_min=None, mod_date_max=None,
                  session=None):
         func_params = locals()
-        params = {}
+        params = {'pageSize': settings.DEFAULT_PAGE_SIZE,}
         for func_key, api_key in (('date_min', 'noEarlierThan'),
                                   ('date_max', 'noLaterThan'),
                                   ('mod_date_min', 'modifiedNoEarlierThan'),
                                   ('mod_date_max', 'modifiedNoLater'),):
             val = parse_date_param(func_params[func_key])
             if val is not None:
-                params[api_key] =val
+                params[api_key] = val
         super(ResourceFeedIter, self).__init__(resource, params=params,
                                                session=session)
         self._iter = iter(self._prop_dict['items'])
@@ -286,7 +288,7 @@ class User(Resource):
     _prop_main = ('userID',)
     
     def __init__(self, session=None):
-        super(User, self).__init__(USER_RESOURCE, session=session)
+        super(User, self).__init__(settings.USER_RESOURCE, session=session)
     
     def get_profile(self):
         return self._get_linked_resource(self._prop_dict['profile'])

@@ -9,7 +9,7 @@ This module implements sessions for making REST requests to the Health Graph API
 
 import requests
 import exceptions
-from settings import API_URL
+import settings
 
 
 __author__ = "Ali Onur Uyar"
@@ -40,7 +40,7 @@ class Session(object):
             if content_header is not None:
                 headers[content_header] = ('application/vnd.com.runkeeper.%s+json'
                                            % content_type)
-        url = API_URL + resource
+        url = settings.API_URL + resource
         req = requests.request(request_type, url, headers=headers, 
                                params=params, data=data)
         return req
@@ -57,7 +57,7 @@ class Session(object):
     def delete(self, resource):
         return self.request('DELETE', resource)
         
-    def head(self, resource, content_type, params=None):
+    def head(self, resource, content_type=None, params=None):
         return self.request('HEAD', resource, content_type, params=params)
 
 

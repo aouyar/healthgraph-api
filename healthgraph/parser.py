@@ -9,8 +9,8 @@ This module contains the classes and methods for parsing Health Graph API data.
 
 import re
 from datetime import date, datetime
-from settings import MONTH2NUM, NUM2MONTH
-from exceptions import ParseValueError, ParseParamError
+import settings
+import exceptions
 
 __author__ = "Ali Onur Uyar"
 __copyright__ = "Copyright 2012, Ali Onur Uyar"
@@ -31,7 +31,7 @@ def parse_bool(val):
     elif val.lower() == 'false':
         return False
     else:
-        raise ParseValueError("Error parsing bool value.")
+        raise exceptions.ParseValueError("Error parsing bool value.")
 
 def parse_date(val):
     if val is None:
@@ -40,10 +40,10 @@ def parse_date(val):
         mobj = re.match('\w+,\s*(\d+)\s+(\w+)\s+(\d+)', val)
         if mobj is not None:
             return date(int(mobj.group(3)), 
-                        MONTH2NUM[mobj.group(2)],
+                        settings.MONTH2NUM[mobj.group(2)],
                         int(mobj.group(1)))
         else:
-            ParseValueError("Error parsing date value.")
+            exceptions.ParseValueError("Error parsing date value.")
             
 def parse_datetime(val):
     if val is None:
@@ -52,13 +52,13 @@ def parse_datetime(val):
         mobj = re.match('\w+,\s*(\d+)\s+(\w+)\s+(\d+)\s+(\d+):(\d+):(\d+)', val)
         if mobj is not None:
             return datetime(int(mobj.group(3)), 
-                            MONTH2NUM[mobj.group(2)],
+                            settings.MONTH2NUM[mobj.group(2)],
                             int(mobj.group(1)),
                             int(mobj.group(4)),
                             int(mobj.group(5)),
                             int(mobj.group(6)),)
         else:
-            ParseValueError("Error parsing date-time value.")
+            exceptions.ParseValueError("Error parsing date-time value.")
         
 def parse_distance(val):
     if val is None:
@@ -66,7 +66,7 @@ def parse_distance(val):
     try:
         return float(val) / 1000
     except:
-        raise ParseValueError("Error parsing distance value.")
+        raise exceptions.ParseValueError("Error parsing distance value.")
     
 def parse_distance_km(val):
     if val is None:
@@ -74,7 +74,7 @@ def parse_distance_km(val):
     try:
         return float(val)
     except:
-        raise ParseValueError("Error parsing distance value.")
+        raise exceptions.ParseValueError("Error parsing distance value.")
     
 def parse_resource_dict(prop_defs, data):
     prop_dict = dict([(k, None) for k in prop_defs])

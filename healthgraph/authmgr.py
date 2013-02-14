@@ -10,6 +10,7 @@ of credentials for accesing the Health Graph API.
 
 import urllib
 import requests
+import settings
 
 __author__ = "Ali Onur Uyar"
 __copyright__ = "Copyright 2012, Ali Onur Uyar"
@@ -18,15 +19,6 @@ __license__ = "GPL"
 __version__ = "0.3.0"
 __email__ = "aouyar at gmail.com"
 __status__ = "Development"
-
-
-from settings import (API_AUTHORIZATION_URL,
-                      API_DEAUTHORIZATION_URL,
-                      API_ACCESS_TOKEN_URL, 
-                      LOGIN_BUTTON_URL,
-                      LOGIN_BUTTON_COLORS,
-                      LOGIN_BUTTON_SIZES,
-                      LOGIN_BUTTON_CAPTION_COLORS)
 
 
 class AuthManager(object):
@@ -66,7 +58,7 @@ class AuthManager(object):
                    'redirect_uri': self._redirect_uri,}
         if state is not None:
             payload['state'] = state
-        return "%s?%s" % (API_AUTHORIZATION_URL,
+        return "%s?%s" % (settings.API_AUTHORIZATION_URL,
                           urllib.urlencode(payload))
     
     def get_login_button_url(self, button_color=None, caption_color=None, button_size=None):
@@ -81,15 +73,17 @@ class AuthManager(object):
         @return:              URL for Login Button Image.
         
         """
-        if not button_color in LOGIN_BUTTON_COLORS:
-            button_color = LOGIN_BUTTON_COLORS[0]
-        if not caption_color in LOGIN_BUTTON_CAPTION_COLORS:
-            caption_color = LOGIN_BUTTON_CAPTION_COLORS[0]
-        if LOGIN_BUTTON_SIZES.has_key(button_size):
-            button_size = LOGIN_BUTTON_SIZES[button_size]
+        if not button_color in settings.LOGIN_BUTTON_COLORS:
+            button_color = settings.LOGIN_BUTTON_COLORS[0]
+        if not caption_color in settings.LOGIN_BUTTON_CAPTION_COLORS:
+            caption_color = settings.LOGIN_BUTTON_CAPTION_COLORS[0]
+        if settings.LOGIN_BUTTON_SIZES.has_key(button_size):
+            button_size = settings.LOGIN_BUTTON_SIZES[button_size]
         else:
-            button_size = LOGIN_BUTTON_SIZES['None']
-        return LOGIN_BUTTON_URL % (button_color, caption_color, button_size)
+            button_size = settings.LOGIN_BUTTON_SIZES['None']
+        return settings.LOGIN_BUTTON_URL % (button_color, 
+                                            caption_color, 
+                                            button_size)
         
     def get_access_token(self, code):
         """Returns Access Token retrieved from the Health Graph API Token 
@@ -106,7 +100,7 @@ class AuthManager(object):
                    'client_id': self._client_id,
                    'client_secret': self._client_secret,
                    'redirect_uri': self._redirect_uri,}
-        req = requests.post(API_ACCESS_TOKEN_URL, data=payload)
+        req = requests.post(settings.API_ACCESS_TOKEN_URL, data=payload)
         data = req.json()
         return data.get('access_token')
     
@@ -118,5 +112,5 @@ class AuthManager(object):
         
         """
         payload = {'access_token': access_token,}
-        req = requests.post(API_DEAUTHORIZATION_URL, data=payload) #@UnusedVariable
+        req = requests.post(settings.API_DEAUTHORIZATION_URL, data=payload) #@UnusedVariable
         
