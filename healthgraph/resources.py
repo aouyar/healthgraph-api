@@ -124,9 +124,12 @@ class APIobject(object):
         resp = self._session.get(resource, content_type)
         return resp.json() # TODO - Error Checking
     
-    def _get_linked_resource(self, link):
+    def _get_linked_resource(self, link, cls_override=None):
         if link is not None:
-            cls = globals().get(link.clsname)
+            if cls_override is None:
+                cls = globals().get(link.clsname)
+            else:
+                cls = globals().get(cls_override)
             if inspect.isclass(cls) and issubclass(cls, BaseResource):
                 return cls(link.resource, self._session)
             else:
@@ -249,8 +252,6 @@ class User(Resource):
                   'team': PropResourceLink('FriendIter'),                
                   }
     
-    _feed_dict = {'fitness_activities': 'FitnessActivityIter',}
-    
     def __init__(self, session=None):
         super(User, self).__init__(USER_RESOURCE, session)
     
@@ -340,8 +341,7 @@ class PersonalRecords(Resource):
         super(PersonalRecords, self).__init__(resource, session)
 
     def _parse_data(self, data):
-        prop_dict = {'totals': {},
-                     'bests': {},}
+        prop_dict = {'totals': {}, 'bests': {},}
         for actrecs in data:
             totals = {}
             bests = {}
@@ -386,8 +386,87 @@ class PersonalRecords(Resource):
             return self._prop_dict['bests'][activity_type]
         except KeyError:
             return None
+
+
+class FitnessActivity(Resource):
     
+    _content_type = ContentType.FITNESS_ACTIVITY
+    _prop_defs = {'uri': PropResourceLink('FitnessActivity'),
+                  'userID': None,
+                  'type': None,
+                  'secondary_type': None,
+                  'equipment': None,
+                  'start_time': parse_datetime,
+                  'total_distance': parse_distance,
+                  'distance': None,
+                  'duration': None,
+                  'average_heart_rate': None,
+                  'heart_rate': None,
+                  'total_calories': None,
+                  'calories': None,
+                  'climb': None,
+                  'notes': None,
+                  'is_live': parse_bool,
+                  'path': None,
+                  'images': None,
+                  'source': None,
+                  'activity': None,
+                  'comments': None,
+                  'previous': PropResourceLink('FitnessActivity'),
+                  'next': PropResourceLink('FitnessActivity'),
+                  'nearest_teammate_fitness_activities': None,
+                  'nearest_strength_training_activity': None,
+                  'nearest_teammate_strength_training_activities': None,
+                  'nearest_background_activity': None,
+                  'nearest_teammate_background_activities': None,
+                  'nearest_sleep': None,
+                  'nearest_teammate_sleep': None,
+                  'nearest_nutrition': None,
+                  'nearest_teammate_nutrition': None,
+                  'nearest_weight': None,
+                  'nearest_teammate_weight': None,
+                  'nearest_general_measurement': None,
+                  'nearest_teammate_general_measurements': None,
+                  'nearest_diabetes': None,
+                  'nearest_teammate_diabetes': None,
+                  }
+    
+    def __init__(self, resource, session=None):
+        super(FitnessActivity, self).__init__(resource, session)
+
+    def get_prev_activity(self):
+        return self._get_linked_resource(self._prop_dict['previous'])
+    
+    def get_next_activity(self):
+        return self._get_linked_resource(self._prop_dict['next'])
+    
+
+class FitnessActivitySummary(Resource):
+    
+    _content_type = ContentType.FITNESS_ACTIVITY_SUMMARY
+    _prop_defs = {'uri': PropResourceLink('FitnessActivity'),
+                  'userID': None,
+                  'type': None,
+                  'secondary_type': None,
+                  'equipment': None,
+                  'start_time': parse_datetime,
+                  'total_distance': parse_distance,
+                  'duration': None,
+                  'average_heart_rate': None,
+                  'total_calories': None,
+                  'climb': None,
+                  'notes': None,
+                  'is_live': parse_bool,
+                  'source': None,
+                  'activity': None,
+                  }
+    
+    def __init__(self, resource, session=None):
+        super(FitnessActivitySummary, self).__init__(resource, session)
         
+    def get_activity_detail(self):
+        return self._get_linked_resource(self._prop_dict['uri'])
+    
 
 class FitnessActivityFeedItem(FeedItem):
     
@@ -395,10 +474,17 @@ class FitnessActivityFeedItem(FeedItem):
                   'type': None,
                   'duration': None,
                   'total_distance': parse_distance,
-                  'uri': PropResourceLink('FitnessActivity')}
+                  'uri': PropResourceLink('FitnessActivity'),
+                  }
     
     def __init__(self, data, session=None):
         super(FitnessActivityFeedItem, self).__init__(data, session)
+        
+    def get_activity_detail(self):
+        return self._get_linked_resource(self._prop_dict['uri'])
+    
+    def get_activity_summary(self):
+        return self._get_linked_resource(self._prop_dict['uri'], 'FitnessActivitySummary')
 
 
 class FitnessActivityIter(ResourceFeedIter):
