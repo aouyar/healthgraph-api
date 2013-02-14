@@ -10,7 +10,7 @@ This module contains the classes and methods for parsing Health Graph API data.
 import re
 from datetime import date, datetime
 from settings import MONTH2NUM, NUM2MONTH
-from exceptions import ParseValueError
+from exceptions import ParseValueError, ParseParamError
 
 __author__ = "Ali Onur Uyar"
 __copyright__ = "Copyright 2012, Ali Onur Uyar"
@@ -88,3 +88,10 @@ def parse_resource_dict(prop_defs, data):
         else:
             pass
     return prop_dict
+
+def parse_date_param(val):
+    if isinstance(val, (date, datetime)):
+        return val.strftime('%y-%m-%d')
+    else:
+        return val
+

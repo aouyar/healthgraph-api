@@ -53,3 +53,10 @@ class ParseValueError(Error):
     """
     pass
 
+
+class ParseParamError(Error):
+    """Error in parsing parameter passed to API.
+    
+    """
+    pass
+

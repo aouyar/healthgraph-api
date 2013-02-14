@@ -13,7 +13,8 @@ from collections import namedtuple, MutableMapping
 from settings import USER_RESOURCE
 from session import get_session
 from parser import (parse_resource_dict, parse_bool, parse_distance, parse_distance_km, 
-                    parse_date, parse_datetime,)
+                    parse_date, parse_datetime, 
+                    parse_date_param)
 
 
 __author__ = "Ali Onur Uyar"
@@ -122,18 +123,18 @@ class APIobject(object):
         else:
             self._session = get_session()
             
-    def _get_resource_data(self, resource, content_type):
-        resp = self._session.get(resource, content_type)
+    def _get_resource_data(self, resource, content_type, params=None):
+        resp = self._session.get(resource, content_type, params)
         return resp.json() # TODO - Error Checking
     
-    def _get_linked_resource(self, link, cls_override=None):
+    def _get_linked_resource(self, link, cls_override=None, **kwargs):
         if link is not None:
             if cls_override is None:
                 cls = globals().get(link.clsname)
             else:
                 cls = globals().get(cls_override)
             if inspect.isclass(cls) and issubclass(cls, BaseResource):
-                return cls(link.resource, self._session)
+                return cls(link.resource, session=self._session, **kwargs)
             else:
                 pass
         else:
@@ -155,10 +156,10 @@ class BaseResource(APIobject):
     
     _content_type = None
     
-    def __init__(self, resource = None, session=None):
+    def __init__(self, resource = None, session=None, params=None):
         super(BaseResource,self).__init__(session=session)
         self._resource = resource
-        self.load()
+        self.load(params)
             
     @property
     def resource(self):
@@ -168,9 +169,10 @@ class BaseResource(APIobject):
     def content_type(self):
         return self._content_type
     
-    def load(self):
+    def load(self, params=None):
         if self._resource is not None:
-            data = self._get_resource_data(self._resource, self._content_type)
+            data = self._get_resource_data(self._resource, self._content_type, 
+                                            params)
             self._prop_dict = self._parse_data(data)
             
     def _parse_data(self, data):
@@ -189,8 +191,8 @@ class ResourceItem(APIobject, ContainerMixin):
         
 class Resource(BaseResource, ContainerMixin):
     
-    def __init__(self, resource = None, session=None):
-        super(Resource, self).__init__(resource, session=session)
+    def __init__(self, resource = None, params=None, session=None):
+        super(Resource, self).__init__(resource, params=params, session=session)
 
 
 class ResourceFeedIter(BaseResource):
@@ -202,8 +204,21 @@ class ResourceFeedIter(BaseResource):
     _item_cls = None
     _prop_main = ('size',)
     
-    def __init__(self, resource, session=None):
-        super(ResourceFeedIter, self).__init__(resource, session=session)
+    def __init__(self, resource, 
+                 date_min=None, date_max=None, 
+                 mod_date_min=None, mod_date_max=None,
+                 session=None):
+        func_params = locals()
+        params = {}
+        for func_key, api_key in (('date_min', 'noEarlierThan'),
+                                  ('date_max', 'noLaterThan'),
+                                  ('mod_date_min', 'modifiedNoEarlierThan'),
+                                  ('mod_date_max', 'modifiedNoLater'),):
+            val = parse_date_param(func_params[func_key])
+            if val is not None:
+                params[api_key] =val
+        super(ResourceFeedIter, self).__init__(resource, params=params,
+                                               session=session)
         self._iter = iter(self._prop_dict['items'])
         
     def count(self):
@@ -282,14 +297,32 @@ class User(Resource):
     def get_records(self):
         return self._get_linked_resource(self._prop_dict['records'])
     
-    def get_fitness_activity_iter(self):
-        return self._get_linked_resource(self._prop_dict['fitness_activities'])
+    def get_fitness_activity_iter(self, 
+                                  date_min=None, date_max=None, 
+                                  mod_date_min=None, mod_date_max=None):
+        return self._get_linked_resource(self._prop_dict['fitness_activities'],
+                                         date_min=date_min, 
+                                         date_max=date_max,
+                                         mod_date_min=mod_date_min,
+                                         mod_date_max=mod_date_max)
     
-    def get_strength_activity_iter(self):
-        return self._get_linked_resource(self._prop_dict['strength_training_activities'])
+    def get_strength_activity_iter(self,
+                                   date_min=None, date_max=None, 
+                                   mod_date_min=None, mod_date_max=None):
+        return self._get_linked_resource(self._prop_dict['strength_training_activities'],
+                                         date_min=date_min, 
+                                         date_max=date_max,
+                                         mod_date_min=mod_date_min,
+                                         mod_date_max=mod_date_max)
     
-    def get_weight_measurement_iter(self):
-        return self._get_linked_resource(self._prop_dict['weight'])
+    def get_weight_measurement_iter(self,
+                                    date_min=None, date_max=None, 
+                                    mod_date_min=None, mod_date_max=None):
+        return self._get_linked_resource(self._prop_dict['weight'],
+                                         date_min=date_min, 
+                                         date_max=date_max,
+                                         mod_date_min=mod_date_min,
+                                         mod_date_max=mod_date_max)
     
 
 class Profile(Resource):
@@ -515,8 +548,16 @@ class FitnessActivityIter(ResourceFeedIter):
     _content_type = ContentType.FITNESS_ACTIVITY_FEED
     _item_cls = FitnessActivityFeedItem
     
-    def __init__(self, resource, session=None):
-        super(FitnessActivityIter, self).__init__(resource, session=session)
+    def __init__(self, resource, 
+                 date_min=None, date_max=None, 
+                 mod_date_min=None, mod_date_max=None,
+                 session=None):
+        super(FitnessActivityIter, self).__init__(resource,
+                                                  date_min=date_min,
+                                                  date_max=date_max,
+                                                  mod_date_min=mod_date_min,
+                                                  mod_date_max=mod_date_max, 
+                                                  session=session)
 
 
 class StrengthActivityFeedItem(FeedItem):
@@ -534,8 +575,16 @@ class StrengthActivityIter(ResourceFeedIter):
     _content_type = ContentType.STRENGTH_ACTIVITY_FEED
     _item_cls = StrengthActivityFeedItem
     
-    def __init__(self, resource, session=None):
-        super(StrengthActivityIter, self).__init__(resource, session=session)
+    def __init__(self, resource, 
+                 date_min=None, date_max=None, 
+                 mod_date_min=None, mod_date_max=None,
+                 session=None):
+        super(StrengthActivityIter, self).__init__(resource, 
+                                                   date_min=date_min,
+                                                   date_max=date_max,
+                                                   mod_date_min=mod_date_min,
+                                                   mod_date_max=mod_date_max, 
+                                                   session=session)
 
 
 class WeightMeasurementFeedItem(FeedItem):
@@ -559,5 +608,13 @@ class WeightMeasurementIter(ResourceFeedIter):
     _content_type = ContentType.WEIGHT_MEASUREMENT_FEED
     _item_cls = WeightMeasurementFeedItem
     
-    def __init__(self, resource, session=None):
-        super(WeightMeasurementIter, self).__init__(resource, session=session)
+    def __init__(self, resource, 
+                 date_min=None, date_max=None, 
+                 mod_date_min=None, mod_date_max=None,
+                 session=None):
+        super(WeightMeasurementIter, self).__init__(resource, 
+                                                    date_min=date_min,
+                                                    date_max=date_max,
+                                                    mod_date_min=mod_date_min,
+                                                    mod_date_max=mod_date_max, 
+                                                    session=session)
