@@ -194,6 +194,11 @@ class ArrayImages(ResourceArray):
     def __init__(self, data=None):
         super(ArrayImages, self).__init__(data)
 
+
+class ArrayComments(ResourceArray):
+    def __init__(self, data=None):
+        super(ArrayComments, self).__init__(data)
+
         
 class Resource(BaseResource, ContainerMixin):
     
@@ -503,7 +508,7 @@ class FitnessActivity(Resource):
                   'images': ArrayImages,
                   'source': None,
                   'activity': None,
-                  'comments': None,
+                  'comments': PropResourceLink('CommentThread'),
                   'previous': PropResourceLink('FitnessActivity'),
                   'next': PropResourceLink('FitnessActivity'),
                   'nearest_teammate_fitness_activities': None,
@@ -527,6 +532,9 @@ class FitnessActivity(Resource):
     
     def __init__(self, resource, session=None):
         super(FitnessActivity, self).__init__(resource, session=session)
+
+    def get_comment_thread(self):
+        return self._get_linked_resource(self._prop_dict['comments'])
 
     def get_prev_activity(self):
         return self._get_linked_resource(self._prop_dict['previous'])
@@ -665,3 +673,15 @@ class WeightMeasurementIter(ResourceFeedIter):
                                                     descending=descending, 
                                                     session=session)
 
+
+class CommentThread(Resource):
+    
+    _content_type = content_types.COMMENT_THREAD
+    _prop_defs = {'uri': None,
+                  'userID': None,
+                  'comments': ArrayComments,
+                  }
+    _prop_main = ('uri',)
+    
+    def __init__(self, resource, session=None):
+        super(CommentThread, self).__init__(resource, session=session)
