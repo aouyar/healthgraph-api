@@ -81,7 +81,7 @@ def parse_resource_dict(prop_defs, data):
     for k,v in data.items():
         if prop_defs.has_key(k):
             action = prop_defs[k]
-            if action is None:
+            if action is None or v is None:
                 prop_dict[k] = v
             elif callable(action):
                 prop_dict[k] = action(v)
