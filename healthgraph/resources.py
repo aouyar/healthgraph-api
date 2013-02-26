@@ -112,8 +112,8 @@ class APIobject(object):
         for k in self._prop_main:
             if self._prop_dict[k] is not None:
                 prop_strs.append("%s=%s" % (k, self._prop_dict[k]))
-        return "HealthGraph API: %s(%s)" % (self.__class__.__name__,
-                                             ', '.join(prop_strs))
+        return "%s(%s)" % (self.__class__.__name__,
+                           ', '.join(prop_strs))
 
 
 class BaseResource(APIobject):
@@ -151,6 +151,48 @@ class ResourceItem(APIobject, ContainerMixin):
             self._prop_dict = parse_resource_dict(self._prop_defs, data)
         else:
             self._prop_dict = {}
+            
+
+class ResourceArray(list):
+    
+    def __init__(self, data=None):
+        super(ResourceArray, self).__init__(data or [])
+    
+    def __str__(self):
+        cnt = len(self)
+        if cnt > 0:
+            cont_str = 'count: %s' % cnt
+        else:
+            cont_str = '[]'
+        return "%s(%s)" % (self.__class__.__name__,
+                           cont_str)
+    
+    __repr__ = __str__
+
+
+class ArrayDistance(ResourceArray):
+    def __init__(self, data=None):
+        super(ArrayDistance, self).__init__(data)
+
+
+class ArrayHeartRate(ResourceArray):
+    def __init__(self, data=None):
+        super(ArrayHeartRate, self).__init__(data)
+
+
+class ArrayCalories(ResourceArray):
+    def __init__(self, data=None):
+        super(ArrayCalories, self).__init__(data)
+
+
+class ArrayPath(ResourceArray):
+    def __init__(self, data=None):
+        super(ArrayPath, self).__init__(data)
+
+
+class ArrayImages(ResourceArray):
+    def __init__(self, data=None):
+        super(ArrayImages, self).__init__(data)
 
         
 class Resource(BaseResource, ContainerMixin):
@@ -448,17 +490,17 @@ class FitnessActivity(Resource):
                   'equipment': None,
                   'start_time': parse_datetime,
                   'total_distance': parse_distance,
-                  'distance': None,
+                  'distance': ArrayDistance,
                   'duration': None,
                   'average_heart_rate': None,
-                  'heart_rate': None,
+                  'heart_rate': ArrayHeartRate,
                   'total_calories': None,
-                  'calories': None,
+                  'calories': ArrayCalories,
                   'climb': None,
                   'notes': None,
                   'is_live': parse_bool,
-                  'path': None,
-                  'images': None,
+                  'path': ArrayPath,
+                  'images': ArrayImages,
                   'source': None,
                   'activity': None,
                   'comments': None,
@@ -622,3 +664,4 @@ class WeightMeasurementIter(ResourceFeedIter):
                                                     mod_date_max=mod_date_max,
                                                     descending=descending, 
                                                     session=session)
+
