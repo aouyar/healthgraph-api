@@ -64,7 +64,7 @@ def parse_distance(val):
     if val is None:
         return None
     try:
-        return float(val) / 1000
+        return float(val)
     except:
         raise exceptions.ParseValueError("Error parsing distance value.")
     
@@ -72,7 +72,7 @@ def parse_distance_km(val):
     if val is None:
         return None
     try:
-        return float(val)
+        return float(val) * 1000
     except:
         raise exceptions.ParseValueError("Error parsing distance value.")
     
