@@ -369,6 +369,16 @@ class User(Resource):
                                          mod_date_max=mod_date_max,
                                          descending=descending)
     
+    def get_sleep_measurement_iter(self,
+                                    date_min=None, date_max=None, 
+                                    mod_date_min=None, mod_date_max=None,
+                                    descending=True):
+        return self._get_linked_resource(self._prop_dict['sleep'],
+                                         date_min=date_min, 
+                                         date_max=date_max,
+                                         mod_date_min=mod_date_min,
+                                         mod_date_max=mod_date_max,
+                                         descending=descending)
 
 class Profile(Resource):
     
@@ -640,7 +650,7 @@ class StrengthActivityIter(ResourceFeedIter):
 
 
 class WeightMeasurementFeedItem(FeedItem):
-    
+
     _prop_defs = {'uri': PropResourceLink('WeightMeasurement'),
                   'timestamp': parse_datetime,
                   'weight': float,
@@ -650,22 +660,62 @@ class WeightMeasurementFeedItem(FeedItem):
                   'mass_weight': float,
                   'bmi': float}
     _prop_main = ('timestamp',)
-    
+
     def __init__(self, data, session=None):
         super(WeightMeasurementFeedItem, self).__init__(data, session=session)
 
 
 class WeightMeasurementIter(ResourceFeedIter):
-    
+
     _content_type = content_types.WEIGHT_MEASUREMENT_FEED
     _item_cls = WeightMeasurementFeedItem
+
+    def __init__(self, resource, 
+                 date_min=None, date_max=None,
+                 mod_date_min=None, mod_date_max=None,
+                 descending=True,
+                 session=None):
+        super(WeightMeasurementIter, self).__init__(resource,
+                                                    date_min=date_min,
+                                                    date_max=date_max,
+                                                    mod_date_min=mod_date_min,
+                                                    mod_date_max=mod_date_max,
+                                                    descending=descending,
+                                                    session=session)
+
+
+class SleepMeasurementFeedItem(FeedItem):
+
+    _prop_defs = {'uri': PropResourceLink('SleepMeasurement'),
+                  'timestamp': parse_datetime,
+                  'total_sleep': float,
+                  'rem': float,
+                  'deep': float,
+                  'light': float,
+                  'awake': float,
+                  'times_woken': float,
+                  'source': None,
+                  'previous': None,
+                  'next': None,
+                  # nearest_* fields for other types are omitted for now
+                  }
+    _prop_main = ('timestamp',)
+
+    def __init__(self, data, session=None):
+        super(SleepMeasurementFeedItem, self).__init__(data, session=session)
+
+
+class SleepMeasurementIter(ResourceFeedIter):
+    
+    _content_type = content_types.SLEEP_MEASUREMENT_FEED
+    _item_cls = SleepMeasurementFeedItem
     
     def __init__(self, resource, 
                  date_min=None, date_max=None, 
                  mod_date_min=None, mod_date_max=None,
                  descending=True,
                  session=None):
-        super(WeightMeasurementIter, self).__init__(resource, 
+        super(SleepMeasurementIter, self).__init__(resource, 
                                                     date_min=date_min,
                                                     date_max=date_max,
                                                     mod_date_min=mod_date_min,
