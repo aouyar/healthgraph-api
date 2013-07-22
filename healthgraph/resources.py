@@ -587,6 +587,9 @@ class FitnessActivityFeedItem(FeedItem):
                   'type': None,
                   'duration': None,
                   'total_distance': parse_distance,
+                  'total_calories': None,
+                  'has_path': parse_bool,
+                  'entry_mode': None,
                   'uri': PropResourceLink('FitnessActivity'),
                   }
     _prop_main = ('type', 'start_time',)
